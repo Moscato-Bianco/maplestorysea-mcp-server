@@ -1,6 +1,6 @@
 {
   "name": "maplestory-mcp-server",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Official-style NEXON MapleStory MCP Server for Claude Desktop - Complete character info, union details, guild data, rankings, and game mechanics",
   "main": "dist/index.js",
   "bin": {

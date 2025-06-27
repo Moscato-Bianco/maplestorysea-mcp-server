@@ -314,8 +314,8 @@ const unionRankings = await getUnionRanking({
 
 ### 설정
 ```bash
-git clone https://github.com/ljy9303/mcp-maple.git
-cd mcp-maple
+git clone https://github.com/ljy9303/maplestory-mcp-server.git
+cd maplestory-mcp-server
 npm install
 npm run build
 ```
@@ -487,7 +487,7 @@ JSON 형식이 올바른지 온라인 JSON 검증기에서 확인하세요.
 
 ## 📞 지원
 
-- **이슈**: [GitHub Issues](https://github.com/ljy9303/mcp-maple/issues)
+- **이슈**: [GitHub Issues](https://github.com/ljy9303/maplestory-mcp-server/issues)
 - **문서**: [API 참조](docs/API_REFERENCE.md)
 - **예시**: [사용 예시](docs/EXAMPLES.md)
 
