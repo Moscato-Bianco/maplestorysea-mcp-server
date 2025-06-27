@@ -24,10 +24,6 @@ node_modules/
 # OS specific
 .DS_Store
 
-# Task files
-# tasks.json
-# tasks/
-
 # TypeScript
 *.tsbuildinfo
 dist/
@@ -56,3 +52,7 @@ yarn-error.log*
 
 # MCP specific
 mcp-*.log 
+
+# Task files
+# tasks.json
+# tasks/ 

@@ -1,9 +1,10 @@
 {
-  "name": "mcp-maple",
-  "version": "1.0.5",
-  "description": "NEXON 메이플스토리 오픈 API MCP 서버 - 캐릭터 정보, 유니온 세부사항, 길드 데이터, 랭킹, 게임 메커니즘 종합 서비스",
+  "name": "maplestory-mcp-server",
+  "version": "1.0.0",
+  "description": "Official-style NEXON MapleStory MCP Server for Claude Desktop - Complete character info, union details, guild data, rankings, and game mechanics",
   "main": "dist/index.js",
   "bin": {
+    "maplestory-mcp-server": "dist/index.js",
     "mcp-maple": "dist/index.js"
   },
   "scripts": {
@@ -18,31 +19,36 @@
     "mcp": "node dist/index.js"
   },
   "keywords": [
-    "mcp",
     "maplestory",
+    "mcp",
     "nexon",
-    "api",
-    "typescript",
     "model-context-protocol",
     "claude",
+    "claude-desktop",
+    "mcp-server",
+    "api",
+    "typescript",
     "ai-assistant",
     "gaming",
     "mmorpg",
     "character-data",
     "union",
     "guild",
-    "ranking"
+    "ranking",
+    "maple",
+    "game-api",
+    "anthropic"
   ],
   "author": "ljy9303",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ljy9303/mcp-maple.git"
+    "url": "git+https://github.com/ljy9303/maplestory-mcp-server.git"
   },
   "bugs": {
-    "url": "https://github.com/ljy9303/mcp-maple/issues"
+    "url": "https://github.com/ljy9303/maplestory-mcp-server/issues"
   },
-  "homepage": "https://github.com/ljy9303/mcp-maple#readme",
+  "homepage": "https://github.com/ljy9303/maplestory-mcp-server#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "ajv": "^8.17.1",
