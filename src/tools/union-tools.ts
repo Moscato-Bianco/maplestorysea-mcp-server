@@ -11,7 +11,8 @@ import { EnhancedBaseTool, ToolContext, ToolResult, ToolCategory } from './base-
  */
 export class GetUnionInfoTool extends EnhancedBaseTool {
   public readonly name = 'get_union_info';
-  public readonly description = 'Retrieve union information for a MapleStory character including level, grade, and artifact details';
+  public readonly description =
+    'Retrieve union information for a MapleStory character including level, grade, and artifact details';
 
   public readonly inputSchema: JSONSchema7 = {
     type: 'object',
@@ -48,7 +49,10 @@ export class GetUnionInfoTool extends EnhancedBaseTool {
     ],
   };
 
-  protected async executeImpl(args: Record<string, any>, context: ToolContext): Promise<ToolResult> {
+  protected async executeImpl(
+    args: Record<string, any>,
+    context: ToolContext
+  ): Promise<ToolResult> {
     const characterName = this.getRequiredString(args, 'characterName');
     const date = this.getOptionalString(args, 'date');
 
@@ -74,21 +78,24 @@ export class GetUnionInfoTool extends EnhancedBaseTool {
         executionTime,
       });
 
-      return this.formatResult({
-        characterName,
-        date: unionInfo.date || date || 'latest',
-        unionLevel: unionInfo.union_level,
-        unionGrade: unionInfo.union_grade,
-        unionArtifact: {
-          level: unionInfo.union_artifact_level,
-          exp: unionInfo.union_artifact_exp,
-          point: unionInfo.union_artifact_point,
+      return this.formatResult(
+        {
+          characterName,
+          date: unionInfo.date || date || 'latest',
+          unionLevel: unionInfo.union_level,
+          unionGrade: unionInfo.union_grade,
+          unionArtifact: {
+            level: unionInfo.union_artifact_level,
+            exp: unionInfo.union_artifact_exp,
+            point: unionInfo.union_artifact_point,
+          },
         },
-      }, {
-        executionTime,
-        cacheHit: false,
-        apiCalls: 2, // OCID lookup + union info
-      });
+        {
+          executionTime,
+          cacheHit: false,
+          apiCalls: 2, // OCID lookup + union info
+        }
+      );
     } catch (error) {
       context.logger.error('Failed to get union info', {
         characterName,
@@ -109,7 +116,8 @@ export class GetUnionInfoTool extends EnhancedBaseTool {
  */
 export class GetUnionRaiderTool extends EnhancedBaseTool {
   public readonly name = 'get_union_raider';
-  public readonly description = 'Retrieve union raider board information including block placement and stats';
+  public readonly description =
+    'Retrieve union raider board information including block placement and stats';
 
   public readonly inputSchema: JSONSchema7 = {
     type: 'object',
@@ -146,7 +154,10 @@ export class GetUnionRaiderTool extends EnhancedBaseTool {
     ],
   };
 
-  protected async executeImpl(args: Record<string, any>, context: ToolContext): Promise<ToolResult> {
+  protected async executeImpl(
+    args: Record<string, any>,
+    context: ToolContext
+  ): Promise<ToolResult> {
     const characterName = this.getRequiredString(args, 'characterName');
     const date = this.getOptionalString(args, 'date');
 
@@ -165,18 +176,22 @@ export class GetUnionRaiderTool extends EnhancedBaseTool {
       const executionTime = Date.now() - startTime;
 
       // Process union blocks for better presentation
-      const blocksByClass = raiderInfo.union_block?.reduce((acc, block) => {
-        if (!acc[block.block_class]) {
-          acc[block.block_class] = [];
-        }
-        acc[block.block_class]!.push({
-          type: block.block_type,
-          level: block.block_level,
-          controlPoint: block.block_control_point,
-          positions: block.block_position,
-        });
-        return acc;
-      }, {} as Record<string, Array<any>>) || {};
+      const blocksByClass =
+        raiderInfo.union_block?.reduce(
+          (acc, block) => {
+            if (!acc[block.block_class]) {
+              acc[block.block_class] = [];
+            }
+            acc[block.block_class]!.push({
+              type: block.block_type,
+              level: block.block_level,
+              controlPoint: block.block_control_point,
+              positions: block.block_position,
+            });
+            return acc;
+          },
+          {} as Record<string, Array<any>>
+        ) || {};
 
       context.logger.info('Union raider info retrieved successfully', {
         characterName,
@@ -185,26 +200,30 @@ export class GetUnionRaiderTool extends EnhancedBaseTool {
         executionTime,
       });
 
-      return this.formatResult({
-        characterName,
-        date: raiderInfo.date || date || 'latest',
-        presetNo: raiderInfo.use_preset_no,
-        raiderStats: raiderInfo.union_raider_stat || [],
-        occupiedStats: raiderInfo.union_occupied_stat || [],
-        innerStats: raiderInfo.union_inner_stat?.map(stat => ({
-          fieldId: stat.stat_field_id,
-          effect: stat.stat_field_effect,
-        })) || [],
-        blocks: {
-          total: raiderInfo.union_block?.length || 0,
-          byClass: blocksByClass,
-          details: raiderInfo.union_block || [],
+      return this.formatResult(
+        {
+          characterName,
+          date: raiderInfo.date || date || 'latest',
+          presetNo: raiderInfo.use_preset_no,
+          raiderStats: raiderInfo.union_raider_stat || [],
+          occupiedStats: raiderInfo.union_occupied_stat || [],
+          innerStats:
+            raiderInfo.union_inner_stat?.map((stat) => ({
+              fieldId: stat.stat_field_id,
+              effect: stat.stat_field_effect,
+            })) || [],
+          blocks: {
+            total: raiderInfo.union_block?.length || 0,
+            byClass: blocksByClass,
+            details: raiderInfo.union_block || [],
+          },
         },
-      }, {
-        executionTime,
-        cacheHit: false,
-        apiCalls: 2, // OCID lookup + raider info
-      });
+        {
+          executionTime,
+          cacheHit: false,
+          apiCalls: 2, // OCID lookup + raider info
+        }
+      );
     } catch (error) {
       context.logger.error('Failed to get union raider info', {
         characterName,
@@ -225,7 +244,8 @@ export class GetUnionRaiderTool extends EnhancedBaseTool {
  */
 export class GetUnionRankingTool extends EnhancedBaseTool {
   public readonly name = 'get_union_ranking';
-  public readonly description = 'Retrieve union power rankings for a specific world or overall rankings';
+  public readonly description =
+    'Retrieve union power rankings for a specific world or overall rankings';
 
   public readonly inputSchema: JSONSchema7 = {
     type: 'object',
@@ -234,8 +254,20 @@ export class GetUnionRankingTool extends EnhancedBaseTool {
         type: 'string',
         description: 'World name to get rankings for (optional, gets all worlds if not specified)',
         enum: [
-          '스카니아', '베라', '루나', '제니스', '크로아', '유니온', '엘리시움', 
-          '이노시스', '레드', '오로라', '아케인', '노바', '리부트', '리부트2'
+          '스카니아',
+          '베라',
+          '루나',
+          '제니스',
+          '크로아',
+          '유니온',
+          '엘리시움',
+          '이노시스',
+          '레드',
+          '오로라',
+          '아케인',
+          '노바',
+          '리부트',
+          '리부트2',
         ],
       },
       characterName: {
@@ -284,7 +316,10 @@ export class GetUnionRankingTool extends EnhancedBaseTool {
     ],
   };
 
-  protected async executeImpl(args: Record<string, any>, context: ToolContext): Promise<ToolResult> {
+  protected async executeImpl(
+    args: Record<string, any>,
+    context: ToolContext
+  ): Promise<ToolResult> {
     const worldName = this.getOptionalString(args, 'worldName');
     const characterName = this.getOptionalString(args, 'characterName');
     const page = this.getOptionalNumber(args, 'page', 1);
@@ -297,33 +332,36 @@ export class GetUnionRankingTool extends EnhancedBaseTool {
 
       // If character name is provided, get OCID for search
       if (characterName) {
-        context.logger.info('Looking up character OCID for union ranking search', { characterName });
+        context.logger.info('Looking up character OCID for union ranking search', {
+          characterName,
+        });
         const ocidResult = await context.nexonClient.getCharacterOcid(characterName);
         ocid = ocidResult.ocid;
       }
 
       // Get union rankings
-      context.logger.info('Fetching union rankings', { 
-        worldName: worldName || undefined, 
-        characterName: characterName || undefined, 
+      context.logger.info('Fetching union rankings', {
+        worldName: worldName || undefined,
+        characterName: characterName || undefined,
         ocid: ocid ? `${ocid.substring(0, 8)}...` : undefined,
         page,
       } as any);
-      
+
       const rankings = await context.nexonClient.getUnionRanking(worldName, ocid, page, date);
 
       const executionTime = Date.now() - startTime;
 
-      const rankingData = rankings.ranking?.map(entry => ({
-        rank: entry.ranking,
-        characterName: entry.character_name,
-        world: entry.world_name,
-        class: entry.class_name,
-        subClass: entry.sub_class_name,
-        unionLevel: entry.union_level,
-        unionPower: entry.union_power,
-        date: entry.date,
-      })) || [];
+      const rankingData =
+        rankings.ranking?.map((entry) => ({
+          rank: entry.ranking,
+          characterName: entry.character_name,
+          world: entry.world_name,
+          class: entry.class_name,
+          subClass: entry.sub_class_name,
+          unionLevel: entry.union_level,
+          unionPower: entry.union_power,
+          date: entry.date,
+        })) || [];
 
       context.logger.info('Union rankings retrieved successfully', {
         worldName: worldName || undefined,
@@ -333,27 +371,35 @@ export class GetUnionRankingTool extends EnhancedBaseTool {
         executionTime,
       } as any);
 
-      return this.formatResult({
-        page,
-        pageSize: rankingData.length,
-        worldName: worldName || 'all',
-        searchCharacter: characterName || undefined,
-        date: date || 'latest',
-        rankings: rankingData,
-        summary: {
-          totalResults: rankingData.length,
-          topUnionLevel: rankingData.length > 0 ? Math.max(...rankingData.map(r => r.unionLevel)) : 0,
-          topUnionPower: rankingData.length > 0 ? Math.max(...rankingData.map(r => r.unionPower)) : 0,
-          worldDistribution: rankingData.reduce((acc, entry) => {
-            acc[entry.world] = (acc[entry.world] || 0) + 1;
-            return acc;
-          }, {} as Record<string, number>),
+      return this.formatResult(
+        {
+          page,
+          pageSize: rankingData.length,
+          worldName: worldName || 'all',
+          searchCharacter: characterName || undefined,
+          date: date || 'latest',
+          rankings: rankingData,
+          summary: {
+            totalResults: rankingData.length,
+            topUnionLevel:
+              rankingData.length > 0 ? Math.max(...rankingData.map((r) => r.unionLevel)) : 0,
+            topUnionPower:
+              rankingData.length > 0 ? Math.max(...rankingData.map((r) => r.unionPower)) : 0,
+            worldDistribution: rankingData.reduce(
+              (acc, entry) => {
+                acc[entry.world] = (acc[entry.world] || 0) + 1;
+                return acc;
+              },
+              {} as Record<string, number>
+            ),
+          },
         },
-      }, {
-        executionTime,
-        cacheHit: false,
-        apiCalls: characterName ? 2 : 1, // OCID lookup (if needed) + rankings
-      });
+        {
+          executionTime,
+          cacheHit: false,
+          apiCalls: characterName ? 2 : 1, // OCID lookup (if needed) + rankings
+        }
+      );
     } catch (error) {
       context.logger.error('Failed to get union rankings', {
         worldName: worldName || undefined,
@@ -363,9 +409,7 @@ export class GetUnionRankingTool extends EnhancedBaseTool {
       } as any);
 
       return this.formatError(
-        `Failed to get union rankings: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to get union rankings: ${error instanceof Error ? error.message : String(error)}`
       );
     }
   }

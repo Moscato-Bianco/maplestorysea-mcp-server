@@ -63,7 +63,10 @@ export class GetNoticeListTool extends EnhancedBaseTool {
     ],
   };
 
-  protected async executeImpl(args: Record<string, any>, context: ToolContext): Promise<ToolResult> {
+  protected async executeImpl(
+    args: Record<string, any>,
+    context: ToolContext
+  ): Promise<ToolResult> {
     const noticeType = this.getOptionalString(args, 'noticeType', 'general');
     const page = this.getOptionalNumber(args, 'page', 1);
     const limit = this.getOptionalNumber(args, 'limit', 10);
@@ -71,7 +74,7 @@ export class GetNoticeListTool extends EnhancedBaseTool {
     try {
       const startTime = Date.now();
 
-      context.logger.info('Fetching notice list', { 
+      context.logger.info('Fetching notice list', {
         noticeType,
         page,
         limit,
@@ -81,7 +84,7 @@ export class GetNoticeListTool extends EnhancedBaseTool {
       // The actual API endpoints would need to be implemented in the NexonApiClient
       // Based on the constants, we have these endpoints:
       // - /maplestory/v1/notice (general notices)
-      // - /maplestory/v1/notice-update (update notices)  
+      // - /maplestory/v1/notice-update (update notices)
       // - /maplestory/v1/notice-event (event notices)
       // - /maplestory/v1/notice-cashshop (cash shop notices)
 
@@ -107,8 +110,8 @@ export class GetNoticeListTool extends EnhancedBaseTool {
         },
       ];
 
-      const filteredNotices = notices.filter(notice => 
-        noticeType === 'general' || notice.type === noticeType
+      const filteredNotices = notices.filter(
+        (notice) => noticeType === 'general' || notice.type === noticeType
       );
 
       context.logger.info('Notice list retrieved successfully', {
@@ -118,24 +121,27 @@ export class GetNoticeListTool extends EnhancedBaseTool {
         executionTime,
       });
 
-      return this.formatResult({
-        noticeType,
-        page,
-        limit,
-        totalNotices: filteredNotices.length,
-        notices: filteredNotices.slice((page - 1) * limit, page * limit),
-        hasMore: filteredNotices.length > page * limit,
-        summary: {
-          importantNotices: filteredNotices.filter(n => n.important).length,
-          updateNotices: filteredNotices.filter(n => n.type === 'update').length,
-          eventNotices: filteredNotices.filter(n => n.type === 'event').length,
-          cashshopNotices: filteredNotices.filter(n => n.type === 'cashshop').length,
+      return this.formatResult(
+        {
+          noticeType,
+          page,
+          limit,
+          totalNotices: filteredNotices.length,
+          notices: filteredNotices.slice((page - 1) * limit, page * limit),
+          hasMore: filteredNotices.length > page * limit,
+          summary: {
+            importantNotices: filteredNotices.filter((n) => n.important).length,
+            updateNotices: filteredNotices.filter((n) => n.type === 'update').length,
+            eventNotices: filteredNotices.filter((n) => n.type === 'event').length,
+            cashshopNotices: filteredNotices.filter((n) => n.type === 'cashshop').length,
+          },
         },
-      }, {
-        executionTime,
-        cacheHit: false,
-        apiCalls: 1,
-      });
+        {
+          executionTime,
+          cacheHit: false,
+          apiCalls: 1,
+        }
+      );
     } catch (error) {
       context.logger.error('Failed to get notice list', {
         noticeType,
@@ -144,9 +150,7 @@ export class GetNoticeListTool extends EnhancedBaseTool {
       });
 
       return this.formatError(
-        `Failed to get notice list: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to get notice list: ${error instanceof Error ? error.message : String(error)}`
       );
     }
   }
@@ -183,7 +187,10 @@ export class GetNoticeDetailTool extends EnhancedBaseTool {
     ],
   };
 
-  protected async executeImpl(args: Record<string, any>, context: ToolContext): Promise<ToolResult> {
+  protected async executeImpl(
+    args: Record<string, any>,
+    context: ToolContext
+  ): Promise<ToolResult> {
     const noticeId = this.getRequiredNumber(args, 'noticeId');
 
     try {

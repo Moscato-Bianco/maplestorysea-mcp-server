@@ -11,7 +11,8 @@ import { EnhancedBaseTool, ToolContext, ToolResult, ToolCategory } from './base-
  */
 export class GetCubeProbabilityTool extends EnhancedBaseTool {
   public readonly name = 'get_cube_probability';
-  public readonly description = 'Retrieve cube usage probability information and enhancement statistics';
+  public readonly description =
+    'Retrieve cube usage probability information and enhancement statistics';
 
   public readonly inputSchema: JSONSchema7 = {
     type: 'object',
@@ -64,7 +65,10 @@ export class GetCubeProbabilityTool extends EnhancedBaseTool {
     ],
   };
 
-  protected async executeImpl(args: Record<string, any>, context: ToolContext): Promise<ToolResult> {
+  protected async executeImpl(
+    args: Record<string, any>,
+    context: ToolContext
+  ): Promise<ToolResult> {
     const cubeType = this.getOptionalString(args, 'cubeType');
     const potentialGrade = this.getOptionalString(args, 'potentialGrade');
     const itemLevel = this.getOptionalNumber(args, 'itemLevel');
@@ -73,7 +77,7 @@ export class GetCubeProbabilityTool extends EnhancedBaseTool {
     try {
       const startTime = Date.now();
 
-      context.logger.info('Fetching cube probability information', { 
+      context.logger.info('Fetching cube probability information', {
         cubeType,
         potentialGrade,
         itemLevel,
@@ -92,15 +96,15 @@ export class GetCubeProbabilityTool extends EnhancedBaseTool {
         date: date || 'latest',
         probabilities: {
           gradeUpProbability: {
-            'rare_to_epic': '19.5%',
-            'epic_to_unique': '4.76%',
-            'unique_to_legendary': '0.96%',
+            rare_to_epic: '19.5%',
+            epic_to_unique: '4.76%',
+            unique_to_legendary: '0.96%',
           },
           gradeMaintenanceProbability: {
-            'rare': '80.5%',
-            'epic': '95.24%',
-            'unique': '99.04%',
-            'legendary': '100%',
+            rare: '80.5%',
+            epic: '95.24%',
+            unique: '99.04%',
+            legendary: '100%',
           },
           optionProbabilities: [
             {
@@ -111,7 +115,7 @@ export class GetCubeProbabilityTool extends EnhancedBaseTool {
             },
             {
               option: 'DEX +12',
-              grade: 'legendary', 
+              grade: 'legendary',
               probability: '2.44%',
               category: 'primary_stat',
             },
@@ -182,7 +186,8 @@ export class GetCubeProbabilityTool extends EnhancedBaseTool {
  */
 export class GetStarforceProbabilityTool extends EnhancedBaseTool {
   public readonly name = 'get_starforce_probability';
-  public readonly description = 'Retrieve starforce enhancement probability information and success rates';
+  public readonly description =
+    'Retrieve starforce enhancement probability information and success rates';
 
   public readonly inputSchema: JSONSchema7 = {
     type: 'object',
@@ -238,7 +243,10 @@ export class GetStarforceProbabilityTool extends EnhancedBaseTool {
     ],
   };
 
-  protected async executeImpl(args: Record<string, any>, context: ToolContext): Promise<ToolResult> {
+  protected async executeImpl(
+    args: Record<string, any>,
+    context: ToolContext
+  ): Promise<ToolResult> {
     const itemLevel = this.getOptionalNumber(args, 'itemLevel');
     const currentStars = this.getOptionalNumber(args, 'currentStars');
     const targetStars = this.getOptionalNumber(args, 'targetStars');
@@ -248,7 +256,7 @@ export class GetStarforceProbabilityTool extends EnhancedBaseTool {
     try {
       const startTime = Date.now();
 
-      context.logger.info('Fetching starforce probability information', { 
+      context.logger.info('Fetching starforce probability information', {
         itemLevel,
         currentStars,
         targetStars,
@@ -270,15 +278,15 @@ export class GetStarforceProbabilityTool extends EnhancedBaseTool {
 
         // Approximate MapleStory starforce rates
         if (starLevel <= 10) {
-          successRate = 100 - (starLevel * 5);
+          successRate = 100 - starLevel * 5;
         } else if (starLevel <= 15) {
-          successRate = 45 - ((starLevel - 10) * 15);
+          successRate = 45 - (starLevel - 10) * 15;
         } else if (starLevel <= 20) {
-          successRate = 30 - ((starLevel - 15) * 5);
+          successRate = 30 - (starLevel - 15) * 5;
           destroyRate = (starLevel - 15) * 0.7;
         } else {
           successRate = 3;
-          destroyRate = 1 + ((starLevel - 20) * 0.5);
+          destroyRate = 1 + (starLevel - 20) * 0.5;
         }
 
         if (starLevel >= 11) {
@@ -298,7 +306,7 @@ export class GetStarforceProbabilityTool extends EnhancedBaseTool {
         };
       });
 
-      const filteredData = starforceProbabilities.filter(data => {
+      const filteredData = starforceProbabilities.filter((data) => {
         if (currentStars !== undefined && data.starLevel !== currentStars + 1) return false;
         if (targetStars !== undefined && data.starLevel !== targetStars) return false;
         return true;
@@ -313,28 +321,35 @@ export class GetStarforceProbabilityTool extends EnhancedBaseTool {
         executionTime,
       });
 
-      return this.formatResult({
-        itemLevel: itemLevel || 'all',
-        currentStars: currentStars || 'all',
-        targetStars: targetStars || 'all',
-        eventType,
-        date: date || 'latest',
-        probabilities: filteredData,
-        summary: {
-          totalStarLevels: filteredData.length,
-          highestSuccessRate: filteredData.length > 0 
-            ? Math.max(...filteredData.map(p => parseFloat(p.successRate.replace('%', ''))))
-            : 0,
-          lowestSuccessRate: filteredData.length > 0 
-            ? Math.min(...filteredData.map(p => parseFloat(p.successRate.replace('%', ''))))
-            : 0,
-          destroyRiskStars: filteredData.filter(p => parseFloat(p.destroyRate.replace('%', '')) > 0).length,
+      return this.formatResult(
+        {
+          itemLevel: itemLevel || 'all',
+          currentStars: currentStars || 'all',
+          targetStars: targetStars || 'all',
+          eventType,
+          date: date || 'latest',
+          probabilities: filteredData,
+          summary: {
+            totalStarLevels: filteredData.length,
+            highestSuccessRate:
+              filteredData.length > 0
+                ? Math.max(...filteredData.map((p) => parseFloat(p.successRate.replace('%', ''))))
+                : 0,
+            lowestSuccessRate:
+              filteredData.length > 0
+                ? Math.min(...filteredData.map((p) => parseFloat(p.successRate.replace('%', ''))))
+                : 0,
+            destroyRiskStars: filteredData.filter(
+              (p) => parseFloat(p.destroyRate.replace('%', '')) > 0
+            ).length,
+          },
         },
-      }, {
-        executionTime,
-        cacheHit: false,
-        apiCalls: 1,
-      });
+        {
+          executionTime,
+          cacheHit: false,
+          apiCalls: 1,
+        }
+      );
     } catch (error) {
       context.logger.error('Failed to get starforce probability information', {
         itemLevel,

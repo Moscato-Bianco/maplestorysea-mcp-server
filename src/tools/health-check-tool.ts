@@ -126,5 +126,4 @@ export class HealthCheckTool extends EnhancedBaseTool {
 
     return true;
   }
-
 }

@@ -11,7 +11,8 @@ import { EnhancedBaseTool, ToolContext, ToolResult, ToolCategory } from './base-
  */
 export class GetOverallRankingTool extends EnhancedBaseTool {
   public readonly name = 'get_overall_ranking';
-  public readonly description = 'Retrieve overall level rankings for MapleStory characters with filtering options';
+  public readonly description =
+    'Retrieve overall level rankings for MapleStory characters with filtering options';
 
   public readonly inputSchema: JSONSchema7 = {
     type: 'object',
@@ -20,8 +21,20 @@ export class GetOverallRankingTool extends EnhancedBaseTool {
         type: 'string',
         description: 'World name to get rankings for (optional)',
         enum: [
-          '스카니아', '베라', '루나', '제니스', '크로아', '유니온', '엘리시움', 
-          '이노시스', '레드', '오로라', '아케인', '노바', '리부트', '리부트2'
+          '스카니아',
+          '베라',
+          '루나',
+          '제니스',
+          '크로아',
+          '유니온',
+          '엘리시움',
+          '이노시스',
+          '레드',
+          '오로라',
+          '아케인',
+          '노바',
+          '리부트',
+          '리부트2',
         ],
       },
       worldType: {
@@ -33,11 +46,41 @@ export class GetOverallRankingTool extends EnhancedBaseTool {
         type: 'string',
         description: 'Character class filter (optional)',
         enum: [
-          '히어로', '팔라딘', '다크나이트', '아크메이지(불,독)', '아크메이지(썬,콜)', '비숍',
-          '보우마스터', '신궁', '패스파인더', '나이트로드', '섀도어', '듀얼블레이드',
-          '바이퍼', '캐논슈터', '스트라이커', '은월', '아란', '에반', '루미너스', '메르세데스',
-          '팬텀', '레인', '미하일', '카이저', '엔젤릭버스터', '제로', '키네시스', '일리움',
-          '아크', '카데나', '칼리', '아델', '카인', '라라', '호영'
+          '히어로',
+          '팔라딘',
+          '다크나이트',
+          '아크메이지(불,독)',
+          '아크메이지(썬,콜)',
+          '비숍',
+          '보우마스터',
+          '신궁',
+          '패스파인더',
+          '나이트로드',
+          '섀도어',
+          '듀얼블레이드',
+          '바이퍼',
+          '캐논슈터',
+          '스트라이커',
+          '은월',
+          '아란',
+          '에반',
+          '루미너스',
+          '메르세데스',
+          '팬텀',
+          '레인',
+          '미하일',
+          '카이저',
+          '엔젤릭버스터',
+          '제로',
+          '키네시스',
+          '일리움',
+          '아크',
+          '카데나',
+          '칼리',
+          '아델',
+          '카인',
+          '라라',
+          '호영',
         ],
       },
       characterName: {
@@ -86,7 +129,10 @@ export class GetOverallRankingTool extends EnhancedBaseTool {
     ],
   };
 
-  protected async executeImpl(args: Record<string, any>, context: ToolContext): Promise<ToolResult> {
+  protected async executeImpl(
+    args: Record<string, any>,
+    context: ToolContext
+  ): Promise<ToolResult> {
     const worldName = this.getOptionalString(args, 'worldName');
     const worldType = this.getOptionalString(args, 'worldType');
     const className = this.getOptionalString(args, 'className');
@@ -107,37 +153,38 @@ export class GetOverallRankingTool extends EnhancedBaseTool {
       }
 
       // Get overall rankings
-      context.logger.info('Fetching overall rankings', { 
-        worldName: worldName || undefined, 
+      context.logger.info('Fetching overall rankings', {
+        worldName: worldName || undefined,
         worldType: worldType || undefined,
         className: className || undefined,
-        characterName: characterName || undefined, 
+        characterName: characterName || undefined,
         page,
       } as any);
-      
+
       const rankings = await context.nexonClient.getOverallRanking(
-        worldName, 
+        worldName,
         worldType,
         className,
-        ocid, 
-        page, 
+        ocid,
+        page,
         date
       );
 
       const executionTime = Date.now() - startTime;
 
-      const rankingData = rankings.ranking?.map(entry => ({
-        rank: entry.ranking,
-        characterName: entry.character_name,
-        world: entry.world_name,
-        class: entry.class_name,
-        subClass: entry.sub_class_name,
-        level: entry.character_level,
-        exp: entry.character_exp,
-        popularity: entry.character_popularity,
-        guildName: entry.character_guildname,
-        date: entry.date,
-      })) || [];
+      const rankingData =
+        rankings.ranking?.map((entry) => ({
+          rank: entry.ranking,
+          characterName: entry.character_name,
+          world: entry.world_name,
+          class: entry.class_name,
+          subClass: entry.sub_class_name,
+          level: entry.character_level,
+          exp: entry.character_exp,
+          popularity: entry.character_popularity,
+          guildName: entry.character_guildname,
+          date: entry.date,
+        })) || [];
 
       context.logger.info('Overall rankings retrieved successfully', {
         worldName: worldName || undefined,
@@ -148,37 +195,47 @@ export class GetOverallRankingTool extends EnhancedBaseTool {
         executionTime,
       } as any);
 
-      return this.formatResult({
-        page,
-        pageSize: rankingData.length,
-        filters: {
-          worldName: worldName || 'all',
-          worldType: worldType || 'all',
-          className: className || 'all',
-          searchCharacter: characterName || undefined,
+      return this.formatResult(
+        {
+          page,
+          pageSize: rankingData.length,
+          filters: {
+            worldName: worldName || 'all',
+            worldType: worldType || 'all',
+            className: className || 'all',
+            searchCharacter: characterName || undefined,
+          },
+          date: date || 'latest',
+          rankings: rankingData,
+          summary: {
+            totalResults: rankingData.length,
+            topLevel: rankingData.length > 0 ? Math.max(...rankingData.map((r) => r.level)) : 0,
+            averageLevel:
+              rankingData.length > 0
+                ? Math.round(rankingData.reduce((sum, r) => sum + r.level, 0) / rankingData.length)
+                : 0,
+            worldDistribution: rankingData.reduce(
+              (acc, entry) => {
+                acc[entry.world] = (acc[entry.world] || 0) + 1;
+                return acc;
+              },
+              {} as Record<string, number>
+            ),
+            classDistribution: rankingData.reduce(
+              (acc, entry) => {
+                acc[entry.class] = (acc[entry.class] || 0) + 1;
+                return acc;
+              },
+              {} as Record<string, number>
+            ),
+          },
         },
-        date: date || 'latest',
-        rankings: rankingData,
-        summary: {
-          totalResults: rankingData.length,
-          topLevel: rankingData.length > 0 ? Math.max(...rankingData.map(r => r.level)) : 0,
-          averageLevel: rankingData.length > 0 
-            ? Math.round(rankingData.reduce((sum, r) => sum + r.level, 0) / rankingData.length)
-            : 0,
-          worldDistribution: rankingData.reduce((acc, entry) => {
-            acc[entry.world] = (acc[entry.world] || 0) + 1;
-            return acc;
-          }, {} as Record<string, number>),
-          classDistribution: rankingData.reduce((acc, entry) => {
-            acc[entry.class] = (acc[entry.class] || 0) + 1;
-            return acc;
-          }, {} as Record<string, number>),
-        },
-      }, {
-        executionTime,
-        cacheHit: false,
-        apiCalls: characterName ? 2 : 1, // OCID lookup (if needed) + rankings
-      });
+        {
+          executionTime,
+          cacheHit: false,
+          apiCalls: characterName ? 2 : 1, // OCID lookup (if needed) + rankings
+        }
+      );
     } catch (error) {
       context.logger.error('Failed to get overall rankings', {
         worldName: worldName || undefined,
@@ -189,9 +246,7 @@ export class GetOverallRankingTool extends EnhancedBaseTool {
       } as any);
 
       return this.formatError(
-        `Failed to get overall rankings: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to get overall rankings: ${error instanceof Error ? error.message : String(error)}`
       );
     }
   }

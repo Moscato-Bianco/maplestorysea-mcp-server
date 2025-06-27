@@ -11,7 +11,8 @@ import { EnhancedBaseTool, ToolContext, ToolResult, ToolCategory } from './base-
  */
 export class GetCharacterBasicInfoTool extends EnhancedBaseTool {
   public readonly name = 'get_character_basic_info';
-  public readonly description = 'Retrieve basic information about a MapleStory character including level, job, world, and guild';
+  public readonly description =
+    'Retrieve basic information about a MapleStory character including level, job, world, and guild';
 
   public readonly inputSchema: JSONSchema7 = {
     type: 'object',
@@ -25,7 +26,8 @@ export class GetCharacterBasicInfoTool extends EnhancedBaseTool {
       },
       date: {
         type: 'string',
-        description: 'Date for character info in YYYY-MM-DD format (optional, defaults to yesterday)',
+        description:
+          'Date for character info in YYYY-MM-DD format (optional, defaults to yesterday)',
         pattern: '^\\d{4}-\\d{2}-\\d{2}$',
       },
     },
@@ -48,7 +50,10 @@ export class GetCharacterBasicInfoTool extends EnhancedBaseTool {
     ],
   };
 
-  protected async executeImpl(args: Record<string, any>, context: ToolContext): Promise<ToolResult> {
+  protected async executeImpl(
+    args: Record<string, any>,
+    context: ToolContext
+  ): Promise<ToolResult> {
     const characterName = this.getRequiredString(args, 'characterName');
     const date = this.getOptionalString(args, 'date');
 
@@ -73,24 +78,27 @@ export class GetCharacterBasicInfoTool extends EnhancedBaseTool {
         executionTime,
       });
 
-      return this.formatResult({
-        characterName: basicInfo.character_name,
-        level: basicInfo.character_level,
-        job: basicInfo.character_class,
-        jobDetail: basicInfo.character_class_level,
-        exp: basicInfo.character_exp,
-        expRate: basicInfo.character_exp_rate,
-        guildName: basicInfo.character_guild_name || null,
-        world: basicInfo.world_name,
-        gender: basicInfo.character_gender,
-        // Basic stats are not available in CharacterBasic endpoint
-        // They need to be fetched separately from getCharacterStat
-        date: basicInfo.date || date || 'latest',
-      }, {
-        executionTime,
-        cacheHit: false,
-        apiCalls: 2, // OCID lookup + basic info
-      });
+      return this.formatResult(
+        {
+          characterName: basicInfo.character_name,
+          level: basicInfo.character_level,
+          job: basicInfo.character_class,
+          jobDetail: basicInfo.character_class_level,
+          exp: basicInfo.character_exp,
+          expRate: basicInfo.character_exp_rate,
+          guildName: basicInfo.character_guild_name || null,
+          world: basicInfo.world_name,
+          gender: basicInfo.character_gender,
+          // Basic stats are not available in CharacterBasic endpoint
+          // They need to be fetched separately from getCharacterStat
+          date: basicInfo.date || date || 'latest',
+        },
+        {
+          executionTime,
+          cacheHit: false,
+          apiCalls: 2, // OCID lookup + basic info
+        }
+      );
     } catch (error) {
       context.logger.error('Failed to get character basic info', {
         characterName,
@@ -111,7 +119,8 @@ export class GetCharacterBasicInfoTool extends EnhancedBaseTool {
  */
 export class GetCharacterStatsTool extends EnhancedBaseTool {
   public readonly name = 'get_character_stats';
-  public readonly description = 'Retrieve detailed statistics for a MapleStory character including damage, critical rate, and all combat stats';
+  public readonly description =
+    'Retrieve detailed statistics for a MapleStory character including damage, critical rate, and all combat stats';
 
   public readonly inputSchema: JSONSchema7 = {
     type: 'object',
@@ -125,7 +134,8 @@ export class GetCharacterStatsTool extends EnhancedBaseTool {
       },
       date: {
         type: 'string',
-        description: 'Date for character stats in YYYY-MM-DD format (optional, defaults to yesterday)',
+        description:
+          'Date for character stats in YYYY-MM-DD format (optional, defaults to yesterday)',
         pattern: '^\\d{4}-\\d{2}-\\d{2}$',
       },
     },
@@ -148,7 +158,10 @@ export class GetCharacterStatsTool extends EnhancedBaseTool {
     ],
   };
 
-  protected async executeImpl(args: Record<string, any>, context: ToolContext): Promise<ToolResult> {
+  protected async executeImpl(
+    args: Record<string, any>,
+    context: ToolContext
+  ): Promise<ToolResult> {
     const characterName = this.getRequiredString(args, 'characterName');
     const date = this.getOptionalString(args, 'date');
 
@@ -167,17 +180,28 @@ export class GetCharacterStatsTool extends EnhancedBaseTool {
       const executionTime = Date.now() - startTime;
 
       // Group stats by category for better presentation
-      const basicStats = stats.final_stat?.filter(s => 
-        ['STR', 'DEX', 'INT', 'LUK', 'HP', 'MP'].includes(s.stat_name)
-      ) || [];
+      const basicStats =
+        stats.final_stat?.filter((s) =>
+          ['STR', 'DEX', 'INT', 'LUK', 'HP', 'MP'].includes(s.stat_name)
+        ) || [];
 
-      const combatStats = stats.final_stat?.filter(s => 
-        ['공격력', '마력', '크리티컬 확률', '크리티컬 데미지', '보스 몬스터 데미지', '방어율 무시', '데미지'].includes(s.stat_name)
-      ) || [];
+      const combatStats =
+        stats.final_stat?.filter((s) =>
+          [
+            '공격력',
+            '마력',
+            '크리티컬 확률',
+            '크리티컬 데미지',
+            '보스 몬스터 데미지',
+            '방어율 무시',
+            '데미지',
+          ].includes(s.stat_name)
+        ) || [];
 
-      const defenseStats = stats.final_stat?.filter(s => 
-        ['물리방어력', '마법방어력', '스탠스', '방어율'].includes(s.stat_name)
-      ) || [];
+      const defenseStats =
+        stats.final_stat?.filter((s) =>
+          ['물리방어력', '마법방어력', '스탠스', '방어율'].includes(s.stat_name)
+        ) || [];
 
       context.logger.info('Character stats retrieved successfully', {
         characterName,
@@ -185,31 +209,47 @@ export class GetCharacterStatsTool extends EnhancedBaseTool {
         executionTime,
       });
 
-      return this.formatResult({
-        characterName,
-        date: stats.date || date || 'latest',
-        basicStats: basicStats.reduce((acc, stat) => {
-          acc[stat.stat_name] = stat.stat_value;
-          return acc;
-        }, {} as Record<string, string>),
-        combatStats: combatStats.reduce((acc, stat) => {
-          acc[stat.stat_name] = stat.stat_value;
-          return acc;
-        }, {} as Record<string, string>),
-        defenseStats: defenseStats.reduce((acc, stat) => {
-          acc[stat.stat_name] = stat.stat_value;
-          return acc;
-        }, {} as Record<string, string>),
-        allStats: stats.final_stat?.reduce((acc, stat) => {
-          acc[stat.stat_name] = stat.stat_value;
-          return acc;
-        }, {} as Record<string, string>) || {},
-        remainAp: stats.remain_ap,
-      }, {
-        executionTime,
-        cacheHit: false,
-        apiCalls: 2, // OCID lookup + stats
-      });
+      return this.formatResult(
+        {
+          characterName,
+          date: stats.date || date || 'latest',
+          basicStats: basicStats.reduce(
+            (acc, stat) => {
+              acc[stat.stat_name] = stat.stat_value;
+              return acc;
+            },
+            {} as Record<string, string>
+          ),
+          combatStats: combatStats.reduce(
+            (acc, stat) => {
+              acc[stat.stat_name] = stat.stat_value;
+              return acc;
+            },
+            {} as Record<string, string>
+          ),
+          defenseStats: defenseStats.reduce(
+            (acc, stat) => {
+              acc[stat.stat_name] = stat.stat_value;
+              return acc;
+            },
+            {} as Record<string, string>
+          ),
+          allStats:
+            stats.final_stat?.reduce(
+              (acc, stat) => {
+                acc[stat.stat_name] = stat.stat_value;
+                return acc;
+              },
+              {} as Record<string, string>
+            ) || {},
+          remainAp: stats.remain_ap,
+        },
+        {
+          executionTime,
+          cacheHit: false,
+          apiCalls: 2, // OCID lookup + stats
+        }
+      );
     } catch (error) {
       context.logger.error('Failed to get character stats', {
         characterName,
@@ -230,7 +270,8 @@ export class GetCharacterStatsTool extends EnhancedBaseTool {
  */
 export class GetCharacterEquipmentTool extends EnhancedBaseTool {
   public readonly name = 'get_character_equipment';
-  public readonly description = 'Retrieve equipment information for a MapleStory character including all equipped items and their stats';
+  public readonly description =
+    'Retrieve equipment information for a MapleStory character including all equipped items and their stats';
 
   public readonly inputSchema: JSONSchema7 = {
     type: 'object',
@@ -244,7 +285,8 @@ export class GetCharacterEquipmentTool extends EnhancedBaseTool {
       },
       date: {
         type: 'string',
-        description: 'Date for character equipment in YYYY-MM-DD format (optional, defaults to yesterday)',
+        description:
+          'Date for character equipment in YYYY-MM-DD format (optional, defaults to yesterday)',
         pattern: '^\\d{4}-\\d{2}-\\d{2}$',
       },
     },
@@ -267,7 +309,10 @@ export class GetCharacterEquipmentTool extends EnhancedBaseTool {
     ],
   };
 
-  protected async executeImpl(args: Record<string, any>, context: ToolContext): Promise<ToolResult> {
+  protected async executeImpl(
+    args: Record<string, any>,
+    context: ToolContext
+  ): Promise<ToolResult> {
     const characterName = this.getRequiredString(args, 'characterName');
     const date = this.getOptionalString(args, 'date');
 
@@ -286,43 +331,47 @@ export class GetCharacterEquipmentTool extends EnhancedBaseTool {
       const executionTime = Date.now() - startTime;
 
       // Organize equipment by category
-      const equipmentBySlot = equipment.item_equipment?.reduce((acc, item) => {
-        acc[item.item_equipment_slot] = {
-          name: item.item_name,
-          icon: item.item_icon,
-          description: item.item_description,
-          shapeIcon: item.item_shape_icon,
-          shapeName: item.item_shape_name,
-          gender: item.item_gender,
-          totalOption: item.item_total_option,
-          baseOption: item.item_base_option,
-          exceptionalOption: item.item_exceptional_option,
-          addOption: item.item_add_option,
-          starforceOption: item.item_starforce_option,
-          etcOption: item.item_etc_option,
-          starforce: item.starforce,
-          starforceScrollFlag: item.starforce_scroll_flag,
-          cuttableCount: item.cuttable_count,
-          goldenHammerFlag: item.golden_hammer_flag,
-          scrollUpgrade: item.scroll_upgrade,
-          scrollUpgradableCount: item.scroll_upgradeable_count,
-          scrollResilienceCount: item.scroll_resilience_count,
-          scrollUpgradeCount: item.scroll_upgradeable_count,
-          potential: item.potential_option_grade,
-          potentialOptions: [
-            item.potential_option_1,
-            item.potential_option_2,
-            item.potential_option_3,
-          ].filter(Boolean),
-          additionalPotential: item.additional_potential_option_grade,
-          additionalPotentialOptions: [
-            item.additional_potential_option_1,
-            item.additional_potential_option_2,
-            item.additional_potential_option_3,
-          ].filter(Boolean),
-        };
-        return acc;
-      }, {} as Record<string, any>) || {};
+      const equipmentBySlot =
+        equipment.item_equipment?.reduce(
+          (acc, item) => {
+            acc[item.item_equipment_slot] = {
+              name: item.item_name,
+              icon: item.item_icon,
+              description: item.item_description,
+              shapeIcon: item.item_shape_icon,
+              shapeName: item.item_shape_name,
+              gender: item.item_gender,
+              totalOption: item.item_total_option,
+              baseOption: item.item_base_option,
+              exceptionalOption: item.item_exceptional_option,
+              addOption: item.item_add_option,
+              starforceOption: item.item_starforce_option,
+              etcOption: item.item_etc_option,
+              starforce: item.starforce,
+              starforceScrollFlag: item.starforce_scroll_flag,
+              cuttableCount: item.cuttable_count,
+              goldenHammerFlag: item.golden_hammer_flag,
+              scrollUpgrade: item.scroll_upgrade,
+              scrollUpgradableCount: item.scroll_upgradeable_count,
+              scrollResilienceCount: item.scroll_resilience_count,
+              scrollUpgradeCount: item.scroll_upgradeable_count,
+              potential: item.potential_option_grade,
+              potentialOptions: [
+                item.potential_option_1,
+                item.potential_option_2,
+                item.potential_option_3,
+              ].filter(Boolean),
+              additionalPotential: item.additional_potential_option_grade,
+              additionalPotentialOptions: [
+                item.additional_potential_option_1,
+                item.additional_potential_option_2,
+                item.additional_potential_option_3,
+              ].filter(Boolean),
+            };
+            return acc;
+          },
+          {} as Record<string, any>
+        ) || {};
 
       context.logger.info('Character equipment retrieved successfully', {
         characterName,
@@ -330,18 +379,21 @@ export class GetCharacterEquipmentTool extends EnhancedBaseTool {
         executionTime,
       });
 
-      return this.formatResult({
-        characterName,
-        date: equipment.date || date || 'latest',
-        equipment: equipmentBySlot,
-        equipmentList: equipment.item_equipment || [],
-        presetNo: equipment.preset_no,
-        title: equipment.title,
-      }, {
-        executionTime,
-        cacheHit: false,
-        apiCalls: 2, // OCID lookup + equipment
-      });
+      return this.formatResult(
+        {
+          characterName,
+          date: equipment.date || date || 'latest',
+          equipment: equipmentBySlot,
+          equipmentList: equipment.item_equipment || [],
+          presetNo: equipment.preset_no,
+          title: equipment.title,
+        },
+        {
+          executionTime,
+          cacheHit: false,
+          apiCalls: 2, // OCID lookup + equipment
+        }
+      );
     } catch (error) {
       context.logger.error('Failed to get character equipment', {
         characterName,
@@ -362,7 +414,8 @@ export class GetCharacterEquipmentTool extends EnhancedBaseTool {
  */
 export class GetCharacterFullInfoTool extends EnhancedBaseTool {
   public readonly name = 'get_character_full_info';
-  public readonly description = 'Retrieve comprehensive character information including basic info, stats, and equipment in a single request';
+  public readonly description =
+    'Retrieve comprehensive character information including basic info, stats, and equipment in a single request';
 
   public readonly inputSchema: JSONSchema7 = {
     type: 'object',
@@ -376,7 +429,8 @@ export class GetCharacterFullInfoTool extends EnhancedBaseTool {
       },
       date: {
         type: 'string',
-        description: 'Date for character info in YYYY-MM-DD format (optional, defaults to yesterday)',
+        description:
+          'Date for character info in YYYY-MM-DD format (optional, defaults to yesterday)',
         pattern: '^\\d{4}-\\d{2}-\\d{2}$',
       },
       includeEquipment: {
@@ -408,7 +462,10 @@ export class GetCharacterFullInfoTool extends EnhancedBaseTool {
     ],
   };
 
-  protected async executeImpl(args: Record<string, any>, context: ToolContext): Promise<ToolResult> {
+  protected async executeImpl(
+    args: Record<string, any>,
+    context: ToolContext
+  ): Promise<ToolResult> {
     const characterName = this.getRequiredString(args, 'characterName');
     const date = this.getOptionalString(args, 'date');
     const includeEquipment = this.getOptionalBoolean(args, 'includeEquipment', true);
@@ -422,8 +479,8 @@ export class GetCharacterFullInfoTool extends EnhancedBaseTool {
       const ocid = ocidResult.ocid;
 
       // Get all character data in parallel
-      context.logger.info('Fetching comprehensive character data', { 
-        characterName, 
+      context.logger.info('Fetching comprehensive character data', {
+        characterName,
         ocid,
         includeEquipment,
       });
@@ -450,40 +507,63 @@ export class GetCharacterFullInfoTool extends EnhancedBaseTool {
           date: basicInfo.date || date || 'latest',
         },
         stats: {
-          basicStats: stats.final_stat?.filter(s => 
-            ['STR', 'DEX', 'INT', 'LUK', 'HP', 'MP'].includes(s.stat_name)
-          ).reduce((acc, stat) => {
-            acc[stat.stat_name] = stat.stat_value;
-            return acc;
-          }, {} as Record<string, string>) || {},
-          combatStats: stats.final_stat?.filter(s => 
-            ['공격력', '마력', '크리티컬 확률', '크리티컬 데미지', '보스 몬스터 데미지', '방어율 무시', '데미지'].includes(s.stat_name)
-          ).reduce((acc, stat) => {
-            acc[stat.stat_name] = stat.stat_value;
-            return acc;
-          }, {} as Record<string, string>) || {},
+          basicStats:
+            stats.final_stat
+              ?.filter((s) => ['STR', 'DEX', 'INT', 'LUK', 'HP', 'MP'].includes(s.stat_name))
+              .reduce(
+                (acc, stat) => {
+                  acc[stat.stat_name] = stat.stat_value;
+                  return acc;
+                },
+                {} as Record<string, string>
+              ) || {},
+          combatStats:
+            stats.final_stat
+              ?.filter((s) =>
+                [
+                  '공격력',
+                  '마력',
+                  '크리티컬 확률',
+                  '크리티컬 데미지',
+                  '보스 몬스터 데미지',
+                  '방어율 무시',
+                  '데미지',
+                ].includes(s.stat_name)
+              )
+              .reduce(
+                (acc, stat) => {
+                  acc[stat.stat_name] = stat.stat_value;
+                  return acc;
+                },
+                {} as Record<string, string>
+              ) || {},
           remainAp: stats.remain_ap,
         },
-        ...(includeEquipment && equipment && {
-          equipment: {
-            presetNo: equipment.preset_no,
-            title: equipment.title,
-            items: equipment.item_equipment?.reduce((acc, item) => {
-              acc[item.item_equipment_slot] = {
-                name: item.item_name,
-                icon: item.item_icon,
-                starforce: item.starforce,
-                potential: item.potential_option_grade,
-                potentialOptions: [
-                  item.potential_option_1,
-                  item.potential_option_2,
-                  item.potential_option_3,
-                ].filter(Boolean),
-              };
-              return acc;
-            }, {} as Record<string, any>) || {},
-          },
-        }),
+        ...(includeEquipment &&
+          equipment && {
+            equipment: {
+              presetNo: equipment.preset_no,
+              title: equipment.title,
+              items:
+                equipment.item_equipment?.reduce(
+                  (acc, item) => {
+                    acc[item.item_equipment_slot] = {
+                      name: item.item_name,
+                      icon: item.item_icon,
+                      starforce: item.starforce,
+                      potential: item.potential_option_grade,
+                      potentialOptions: [
+                        item.potential_option_1,
+                        item.potential_option_2,
+                        item.potential_option_3,
+                      ].filter(Boolean),
+                    };
+                    return acc;
+                  },
+                  {} as Record<string, any>
+                ) || {},
+            },
+          }),
         date: date || 'latest',
       };
 

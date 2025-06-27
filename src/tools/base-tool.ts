@@ -45,7 +45,7 @@ export abstract class BaseTool implements ITool {
   public abstract readonly name: string;
   public abstract readonly description: string;
   public abstract readonly inputSchema: JSONSchema7;
-  
+
   private static ajv = new Ajv({ allErrors: true });
 
   /**
@@ -94,7 +94,7 @@ export abstract class BaseTool implements ITool {
     try {
       const validate = BaseTool.ajv.compile(this.inputSchema as any);
       const isValid = validate(args);
-      
+
       if (!isValid) {
         return false;
       }
@@ -153,7 +153,11 @@ export abstract class BaseTool implements ITool {
   /**
    * Helper method to safely get optional string parameter
    */
-  protected getOptionalString(args: Record<string, any>, key: string, defaultValue?: string): string | undefined {
+  protected getOptionalString(
+    args: Record<string, any>,
+    key: string,
+    defaultValue?: string
+  ): string | undefined {
     const value = args[key];
     if (value === undefined || value === null) {
       return defaultValue;
@@ -192,7 +196,11 @@ export abstract class BaseTool implements ITool {
   /**
    * Helper method to get optional boolean parameter with default value
    */
-  protected getOptionalBoolean(args: Record<string, any>, key: string, defaultValue = false): boolean {
+  protected getOptionalBoolean(
+    args: Record<string, any>,
+    key: string,
+    defaultValue = false
+  ): boolean {
     const value = args[key];
     if (value === undefined || value === null) {
       return defaultValue;
