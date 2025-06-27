@@ -26,9 +26,36 @@ npx mcp-maple --api-key YOUR_NEXON_API_KEY
 npm install -g mcp-maple
 ```
 
-### Claude Desktop과 함께 사용
+### 🖥️ Claude Desktop과 함께 사용
 
-Claude Desktop MCP 설정에 추가 (`claude_desktop_config.json`):
+#### 1. NEXON API 키 준비
+먼저 [NEXON 오픈 API 포털](https://openapi.nexon.com/)에서 API 키를 발급받으세요:
+1. NEXON 계정으로 로그인
+2. "개발자 센터" → "애플리케이션 관리" 이동
+3. "새 애플리케이션 등록" 클릭
+4. 애플리케이션 정보 입력 후 등록
+5. 생성된 API 키 복사
+
+#### 2. Claude Desktop 설정 파일 찾기
+운영체제별 설정 파일 위치:
+
+**Windows:**
+```
+%APPDATA%\Claude\claude_desktop_config.json
+```
+
+**macOS:**
+```
+~/Library/Application Support/Claude/claude_desktop_config.json
+```
+
+**Linux:**
+```
+~/.config/Claude/claude_desktop_config.json
+```
+
+#### 3. MCP 서버 설정 추가
+설정 파일에 다음 내용을 추가하거나 수정하세요:
 
 ```json
 {
@@ -37,12 +64,26 @@ Claude Desktop MCP 설정에 추가 (`claude_desktop_config.json`):
       "command": "npx",
       "args": ["-y", "mcp-maple"],
       "env": {
-        "NEXON_API_KEY": "YOUR_NEXON_API_KEY"
+        "NEXON_API_KEY": "여기에_발급받은_API_키_입력"
       }
     }
   }
 }
 ```
+
+> ⚠️ **중요**: `YOUR_NEXON_API_KEY`를 실제 발급받은 API 키로 교체하세요.
+
+#### 4. Claude Desktop 재시작
+설정 파일을 수정한 후 Claude Desktop을 완전히 종료했다가 다시 시작하세요.
+
+#### 5. 연결 확인
+Claude Desktop이 재시작되면 새 대화에서 다음과 같이 입력해 연결을 확인하세요:
+
+```
+메이플스토리 API가 정상적으로 작동하는지 확인해줘
+```
+
+성공적으로 연결되면 Claude가 메이플스토리 관련 질문에 답할 수 있습니다!
 
 ## 🛠️ 사용 가능한 MCP 도구
 
@@ -73,7 +114,77 @@ Claude Desktop MCP 설정에 추가 (`claude_desktop_config.json`):
 
 ## 📖 사용 예시
 
-### 캐릭터 정보 조회
+### 🎯 Claude Desktop에서 질문하기
+
+Claude Desktop에서 다음과 같은 자연어로 메이플스토리 정보를 조회할 수 있습니다:
+
+#### 캐릭터 정보 조회
+```
+"김코인"이라는 캐릭터의 기본 정보를 알려줘
+```
+
+```
+"베라월드용사" 캐릭터의 상세한 스탯 정보를 조회해줘
+```
+
+```
+"리부트용사" 캐릭터가 착용하고 있는 장비 목록을 보여줘
+```
+
+#### 유니온 및 길드 정보
+```
+"스카니아용사" 캐릭터의 유니온 정보를 조회해줘
+```
+
+```
+"스카니아" 월드의 "길드명" 길드 정보를 알려줘
+```
+
+#### 랭킹 조회
+```
+스카니아 월드의 아크메이지(불,독) 직업 랭킹 1페이지를 보여줘
+```
+
+```
+베라 월드의 유니온 랭킹 상위 20명을 조회해줘
+```
+
+#### 게임 정보
+```
+메이플스토리 최신 공지사항을 확인해줘
+```
+
+```
+레드 큐브의 강화 확률 정보를 알려줘
+```
+
+### 💡 활용 팁
+
+#### 1. 캐릭터 종합 분석
+```
+"스카니아용사" 캐릭터의 모든 정보를 종합적으로 분석해줘 (기본정보, 스탯, 장비, 유니온)
+```
+
+#### 2. 길드 관리
+```
+"베라" 월드의 "우리길드" 길드원들의 레벨과 직업을 정리해줘
+```
+
+#### 3. 랭킹 비교
+```
+"스카니아" 월드와 "베라" 월드의 상위 랭커들을 비교 분석해줘
+```
+
+#### 4. 진행 상황 추적
+```
+"내캐릭터" 캐릭터의 어제와 오늘 스탯 변화를 비교해줘
+```
+
+### 🔧 프로그래밍 예시
+
+개발자를 위한 직접 API 호출 예시:
+
+#### 캐릭터 정보 조회
 ```typescript
 // 기본 캐릭터 정보 조회
 const basicInfo = await getCharacterBasicInfo({
@@ -92,7 +203,7 @@ const equipment = await getCharacterEquipment({
 });
 ```
 
-### 유니온 및 길드 데이터
+#### 유니온 및 길드 데이터
 ```typescript
 // 유니온 정보 조회
 const unionInfo = await getUnionInfo({
@@ -106,7 +217,7 @@ const guildInfo = await getGuildInfo({
 });
 ```
 
-### 랭킹 및 리더보드
+#### 랭킹 및 리더보드
 ```typescript
 // 종합 랭킹 조회
 const rankings = await getOverallRanking({
@@ -138,11 +249,35 @@ const unionRankings = await getUnionRanking({
 
 ## 🔑 NEXON API 키 얻기
 
-1. [NEXON 오픈 API 포털](https://openapi.nexon.com/) 방문
-2. 계정 가입 및 인증
-3. 새 애플리케이션 생성
-4. API 키 복사
-5. `--api-key` 매개변수 또는 `NEXON_API_KEY` 환경변수로 사용
+### 상세 가이드
+
+1. **NEXON 오픈 API 포털 접속**
+   - [https://openapi.nexon.com/](https://openapi.nexon.com/) 방문
+
+2. **계정 생성 및 로그인**
+   - NEXON 계정으로 로그인 (게임 계정과 동일)
+   - 계정이 없다면 회원가입 진행
+
+3. **개발자 센터 이동**
+   - 상단 메뉴에서 "개발자 센터" 클릭
+   - "애플리케이션 관리" 선택
+
+4. **새 애플리케이션 등록**
+   - "새 애플리케이션 등록" 버튼 클릭
+   - 필수 정보 입력:
+     - **애플리케이션 이름**: `MCP Maple` (예시)
+     - **애플리케이션 설명**: `Claude Desktop MCP 서버용`
+     - **서비스 URL**: `http://localhost` (개발용)
+
+5. **API 키 발급 및 복사**
+   - 등록 완료 후 API 키 확인
+   - API 키 복사 (보안을 위해 안전한 곳에 저장)
+
+6. **API 키 사용**
+   - Claude Desktop 설정에서 `NEXON_API_KEY`로 사용
+   - 또는 CLI에서 `--api-key` 매개변수로 사용
+
+> 💡 **팁**: API 키는 외부에 노출되지 않도록 주의하세요. GitHub 등 공개 저장소에 업로드하지 마세요.
 
 ## 🎮 지원되는 게임 및 월드
 
@@ -273,6 +408,82 @@ npm run dev            # 개발 모드 (watch)
 - 메이플스토리 오픈 API를 제공해 주신 [NEXON](https://www.nexon.com/)
 - MCP 사양을 제공해 주신 [Model Context Protocol](https://modelcontextprotocol.io/)
 - Claude 및 MCP 도구를 제공해 주신 [Anthropic](https://www.anthropic.com/)
+
+## 🔧 문제 해결
+
+### 일반적인 문제들
+
+#### 1. Claude Desktop에서 mcp-maple이 인식되지 않는 경우
+
+**증상**: Claude Desktop에서 메이플스토리 관련 질문을 해도 응답하지 못함
+
+**해결방법**:
+1. Claude Desktop을 완전히 종료
+2. 설정 파일 경로가 올바른지 확인:
+   - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+   - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - Linux: `~/.config/Claude/claude_desktop_config.json`
+3. JSON 형식이 올바른지 확인 (쉼표, 괄호 등)
+4. Claude Desktop 재시작
+
+#### 2. API 키 오류
+
+**증상**: "API key is invalid" 또는 "Authentication failed" 오류
+
+**해결방법**:
+1. [NEXON 오픈 API 포털](https://openapi.nexon.com/)에서 API 키 상태 확인
+2. API 키가 만료되지 않았는지 확인
+3. 설정 파일에서 API 키가 올바르게 입력되었는지 확인
+4. API 키 앞뒤 공백 제거
+
+#### 3. 캐릭터를 찾을 수 없는 경우
+
+**증상**: "Character not found" 오류
+
+**해결방법**:
+1. 캐릭터 이름을 정확히 입력 (대소문자, 특수문자 포함)
+2. 해당 캐릭터가 실제로 존재하는지 게임에서 확인
+3. 캐릭터가 최근에 생성된 경우 하루 정도 기다린 후 재시도
+
+#### 4. 요청 제한 초과
+
+**증상**: "Rate limit exceeded" 오류
+
+**해결방법**:
+1. 잠시 기다린 후 재시도 (1분 정도)
+2. 요청 빈도를 줄여서 사용
+3. 하루 500회 제한을 초과하지 않도록 주의
+
+#### 5. 네트워크 연결 문제
+
+**증상**: "Network error" 또는 "Timeout" 오류
+
+**해결방법**:
+1. 인터넷 연결 상태 확인
+2. 방화벽이나 프록시 설정 확인
+3. 잠시 후 재시도
+
+### 디버깅 방법
+
+#### 1. 상세한 로그 확인
+```bash
+npx mcp-maple --debug --api-key YOUR_API_KEY
+```
+
+#### 2. 연결 테스트
+Claude Desktop에서 다음과 같이 입력하여 연결 상태를 확인:
+```
+메이플스토리 API 연결 상태를 확인해줘
+```
+
+#### 3. 설정 파일 검증
+JSON 형식이 올바른지 온라인 JSON 검증기에서 확인하세요.
+
+### 알려진 제한 사항
+
+- **API 호출 제한**: 하루 500회, 초당 1회
+- **데이터 갱신**: 캐릭터 정보는 매일 오전 8시경 업데이트
+- **지원 월드**: 일부 테스트 서버나 특수 월드는 지원되지 않을 수 있음
 
 ## 📞 지원
 
