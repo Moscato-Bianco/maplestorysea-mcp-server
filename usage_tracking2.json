@@ -1,0 +1,17 @@
+{
+  "user_id": "c8644b1e-e8b7-46ae-8770-82658e8e2888",
+  "first_run": "2025-06-27T14:08:18.901221",
+  "runs": [
+    {
+      "timestamp": "2025-06-27T14:08:20.113869",
+      "plan": "pro",
+      "timezone": "Asia_Seoul",
+      "filename": "XXXNEW_pro_Asia_Seoul_c8644b1e-e8b7-46ae-8770-82658e8e2888_20250627_140818.json"
+    }
+  ],
+  "last_upload_config": {
+    "plan": "pro",
+    "timezone": "Asia_Seoul",
+    "timestamp": "2025-06-27T14:08:20.114051"
+  }
+}

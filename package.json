@@ -1,7 +1,7 @@
 {
   "name": "mcp-maple",
   "version": "1.0.0",
-  "description": "MCP server for NEXON MapleStory Open API integration",
+  "description": "A comprehensive Model Context Protocol (MCP) server for accessing NEXON MapleStory Open API data through Claude and other AI assistants",
   "main": "dist/index.js",
   "bin": {
     "mcp-maple": "dist/index.js"
@@ -25,7 +25,15 @@
     "nexon",
     "api",
     "typescript",
-    "model-context-protocol"
+    "model-context-protocol",
+    "claude",
+    "ai-assistant",
+    "gaming",
+    "mmorpg",
+    "character-data",
+    "union",
+    "guild",
+    "ranking"
   ],
   "author": "ljy9303",
   "license": "MIT",
@@ -39,6 +47,7 @@
   "homepage": "https://github.com/ljy9303/mcp-maple#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
+    "ajv": "^8.17.1",
     "axios": "^1.7.0",
     "commander": "^12.1.0",
     "winston": "^3.14.0"

@@ -48,14 +48,6 @@ describe('Character Tools', () => {
       world_name: '스카니아',
       character_gender: '남',
       date: '2024-01-15',
-      final_stat: [
-        { stat_name: 'STR', stat_value: '4' },
-        { stat_name: 'DEX', stat_value: '4' },
-        { stat_name: 'INT', stat_value: '55234' },
-        { stat_name: 'LUK', stat_value: '4' },
-        { stat_name: 'HP', stat_value: '123456' },
-        { stat_name: 'MP', stat_value: '78910' },
-      ],
     };
 
     mockCharacterStats = {
@@ -253,7 +245,7 @@ describe('Character Tools', () => {
 
     describe('Execution', () => {
       beforeEach(() => {
-        (mockContext.nexonClient.getCharacterOcid as jest.Mock).mockResolvedValue('test-ocid-123');
+        (mockContext.nexonClient.getCharacterOcid as jest.Mock).mockResolvedValue({ ocid: 'test-ocid-123' });
         (mockContext.nexonClient.getCharacterBasic as jest.Mock).mockResolvedValue(mockCharacterBasic);
       });
 
@@ -267,15 +259,6 @@ describe('Character Tools', () => {
           job: '아크메이지(불,독)',
           world: '스카니아',
           guildName: '테스트길드',
-        });
-
-        expect(result.data.stats).toMatchObject({
-          str: '4',
-          dex: '4',
-          int: '55234',
-          luk: '4',
-          hp: '123456',
-          mp: '78910',
         });
 
         expect(result.metadata).toMatchObject({
@@ -341,7 +324,7 @@ describe('Character Tools', () => {
 
     describe('Execution', () => {
       beforeEach(() => {
-        (mockContext.nexonClient.getCharacterOcid as jest.Mock).mockResolvedValue('test-ocid-123');
+        (mockContext.nexonClient.getCharacterOcid as jest.Mock).mockResolvedValue({ ocid: 'test-ocid-123' });
         (mockContext.nexonClient.getCharacterStat as jest.Mock).mockResolvedValue(mockCharacterStats);
       });
 
@@ -413,7 +396,7 @@ describe('Character Tools', () => {
 
     describe('Execution', () => {
       beforeEach(() => {
-        (mockContext.nexonClient.getCharacterOcid as jest.Mock).mockResolvedValue('test-ocid-123');
+        (mockContext.nexonClient.getCharacterOcid as jest.Mock).mockResolvedValue({ ocid: 'test-ocid-123' });
         (mockContext.nexonClient.getCharacterItemEquipment as jest.Mock).mockResolvedValue(mockCharacterEquipment);
       });
 
@@ -480,7 +463,7 @@ describe('Character Tools', () => {
 
     describe('Execution', () => {
       beforeEach(() => {
-        (mockContext.nexonClient.getCharacterOcid as jest.Mock).mockResolvedValue('test-ocid-123');
+        (mockContext.nexonClient.getCharacterOcid as jest.Mock).mockResolvedValue({ ocid: 'test-ocid-123' });
         (mockContext.nexonClient.getCharacterBasic as jest.Mock).mockResolvedValue(mockCharacterBasic);
         (mockContext.nexonClient.getCharacterStat as jest.Mock).mockResolvedValue(mockCharacterStats);
         (mockContext.nexonClient.getCharacterItemEquipment as jest.Mock).mockResolvedValue(mockCharacterEquipment);

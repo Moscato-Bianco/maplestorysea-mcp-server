@@ -4,6 +4,7 @@
  */
 
 import { JSONSchema7 } from 'json-schema';
+import Ajv from 'ajv';
 import { NexonApiClient } from '../api/nexon-client';
 import { McpLogger } from '../utils/logger';
 
@@ -44,6 +45,8 @@ export abstract class BaseTool implements ITool {
   public abstract readonly name: string;
   public abstract readonly description: string;
   public abstract readonly inputSchema: JSONSchema7;
+  
+  private static ajv = new Ajv({ allErrors: true });
 
   /**
    * Execute the tool with given arguments
@@ -89,13 +92,11 @@ export abstract class BaseTool implements ITool {
    */
   public validate(args: Record<string, any>): boolean {
     try {
-      // Basic validation - can be enhanced with a JSON schema validator
-      const required = (this.inputSchema.required as string[]) || [];
-
-      for (const field of required) {
-        if (!(field in args) || args[field] === undefined || args[field] === null) {
-          return false;
-        }
+      const validate = BaseTool.ajv.compile(this.inputSchema as any);
+      const isValid = validate(args);
+      
+      if (!isValid) {
+        return false;
       }
 
       return this.validateImpl(args);
@@ -152,7 +153,7 @@ export abstract class BaseTool implements ITool {
   /**
    * Helper method to safely get optional string parameter
    */
-  protected getOptionalString(args: Record<string, any>, key: string, defaultValue = ''): string {
+  protected getOptionalString(args: Record<string, any>, key: string, defaultValue?: string): string | undefined {
     const value = args[key];
     if (value === undefined || value === null) {
       return defaultValue;
