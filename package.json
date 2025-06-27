@@ -4,7 +4,7 @@
   "description": "MCP server for NEXON MapleStory Open API integration",
   "main": "dist/index.js",
   "bin": {
-    "mcp-maple": "dist/cli.js"
+    "mcp-maple": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -40,13 +40,13 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "axios": "^1.7.0",
-    "commander": "^12.0.0",
+    "commander": "^12.1.0",
     "winston": "^3.14.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
     "@types/json-schema": "^7.0.15",
-    "@types/node": "^20.0.0",
+    "@types/node": "^20.19.1",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.57.0",

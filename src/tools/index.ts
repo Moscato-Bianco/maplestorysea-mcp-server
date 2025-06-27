@@ -17,4 +17,3 @@ import { HealthCheckTool } from './health-check-tool';
 export function createAllTools() {
   return [new HealthCheckTool()];
 }
-
