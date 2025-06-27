@@ -30,13 +30,18 @@ export class NexonApiClient {
 
   constructor(config: ApiClientConfig) {
     this.apiKey = config.apiKey;
+    
+    // Check if in MCP mode (no port specified)
+    const isMcpMode = !process.env.MCP_PORT && !process.argv.includes('--port');
+    
     this.logger = createLogger({
       level: 'info',
       format: require('winston').format.combine(
         require('winston').format.timestamp(),
         require('winston').format.json()
       ),
-      transports: [new (require('winston').transports.Console)()],
+      silent: isMcpMode,
+      transports: isMcpMode ? [] : [new (require('winston').transports.Console)()],
     });
 
     // Create axios instance with default configuration

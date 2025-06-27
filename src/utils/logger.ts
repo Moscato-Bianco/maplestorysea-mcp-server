@@ -23,6 +23,9 @@ export class McpLogger {
   private logger: Logger;
 
   constructor(component: string = 'mcp-maple') {
+    // In MCP mode (no port specified), disable console logging to avoid JSON pollution
+    const isMcpMode = !process.env.MCP_PORT && !process.argv.includes('--port');
+    
     this.logger = winston.createLogger({
       level: process.env.LOG_LEVEL || 'info',
       format: winston.format.combine(
@@ -39,8 +42,11 @@ export class McpLogger {
         })
       ),
       defaultMeta: { component },
-      transports: [
+      silent: isMcpMode,
+      transports: isMcpMode ? [] : [
         new winston.transports.Console({
+          stderrLevels: ['error', 'warn', 'info', 'debug'],
+          consoleWarnLevels: [],
           format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
         }),
       ],

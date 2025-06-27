@@ -35,7 +35,7 @@ class CliApp {
     program
       .name('mcp-maple')
       .description('MapleStory API Model Context Protocol Server')
-      .version('1.0.1')
+      .version('1.0.2')
       .option(
         '--api-key <key>',
         'NEXON API key (can also be set via NEXON_API_KEY environment variable)'
@@ -89,11 +89,11 @@ For more information, visit: https://github.com/ljy9303/mcp-maple
 
     if (!apiKey || apiKey.trim() === '') {
       this.logger.error('NEXON API key is required');
-      console.error('\n❌ Error: NEXON API key is required');
-      console.error('\nProvide it via:');
-      console.error('  • CLI argument: --api-key YOUR_API_KEY');
-      console.error('  • Environment variable: NEXON_API_KEY=YOUR_KEY');
-      console.error('\nFor help: npx mcp-maple --help');
+      process.stderr.write('\n❌ Error: NEXON API key is required\n');
+      process.stderr.write('\nProvide it via:\n');
+      process.stderr.write('  • CLI argument: --api-key YOUR_API_KEY\n');
+      process.stderr.write('  • Environment variable: NEXON_API_KEY=YOUR_KEY\n');
+      process.stderr.write('\nFor help: npx mcp-maple --help\n');
       process.exit(1);
     }
 
@@ -105,7 +105,7 @@ For more information, visit: https://github.com/ljy9303/mcp-maple
     const config = {
       nexonApiKey: apiKey.trim(),
       name: options.name || 'mcp-maple',
-      version: options.version || '1.0.1',
+      version: options.version || '1.0.2',
       debug: options.debug || false,
     } as {
       nexonApiKey: string;
@@ -154,24 +154,27 @@ For more information, visit: https://github.com/ljy9303/mcp-maple
       // Start the server
       await this.server.start();
 
-      console.log('✅ MCP Maple server started successfully!');
-      console.log(`📊 Server: ${config.name} v${config.version}`);
-      console.log(`🔧 Tools: ${tools.length} available`);
-      console.log(`🐛 Debug: ${config.debug ? 'enabled' : 'disabled'}`);
+      // Only output startup messages to stderr when not in MCP mode
+      if (config.port !== undefined) {
+        process.stderr.write('✅ MCP Maple server started successfully!\n');
+        process.stderr.write(`📊 Server: ${config.name} v${config.version}\n`);
+        process.stderr.write(`🔧 Tools: ${tools.length} available\n`);
+        process.stderr.write(`🐛 Debug: ${config.debug ? 'enabled' : 'disabled'}\n`);
 
-      if (config.debug) {
-        console.log('\n🔍 Debug mode enabled - verbose logging active');
+        if (config.debug) {
+          process.stderr.write('\n🔍 Debug mode enabled - verbose logging active\n');
+        }
+
+        process.stderr.write('\n📖 Server is ready for MCP connections\n');
+        process.stderr.write('💡 Use Ctrl+C to gracefully shutdown\n');
       }
-
-      console.log('\n📖 Server is ready for MCP connections');
-      console.log('💡 Use Ctrl+C to gracefully shutdown');
     } catch (error) {
       this.logger.error('Failed to start server', {
         error: error instanceof Error ? error.message : String(error),
       });
 
-      console.error('\n❌ Failed to start MCP server:');
-      console.error(`   ${error instanceof Error ? error.message : String(error)}`);
+      process.stderr.write('\n❌ Failed to start MCP server:\n');
+      process.stderr.write(`   ${error instanceof Error ? error.message : String(error)}\n`);
       process.exit(1);
     }
   }
@@ -182,19 +185,19 @@ For more information, visit: https://github.com/ljy9303/mcp-maple
   private setupShutdownHandlers(): void {
     const shutdown = async (signal: string) => {
       this.logger.info(`Received ${signal}, initiating graceful shutdown...`);
-      console.log(`\n🛑 Received ${signal}, shutting down gracefully...`);
+      process.stderr.write(`\n🛑 Received ${signal}, shutting down gracefully...\n`);
 
       try {
         if (this.server) {
           await this.server.shutdown();
-          console.log('✅ Server shutdown completed');
+          process.stderr.write('✅ Server shutdown completed\n');
         }
         process.exit(0);
       } catch (error) {
         this.logger.error('Error during shutdown', {
           error: error instanceof Error ? error.message : String(error),
         });
-        console.error('❌ Error during shutdown:', error);
+        process.stderr.write(`❌ Error during shutdown: ${error}\n`);
         process.exit(1);
       }
     };
@@ -207,7 +210,7 @@ For more information, visit: https://github.com/ljy9303/mcp-maple
     // Handle uncaught exceptions
     process.on('uncaughtException', (error) => {
       this.logger.error('Uncaught exception', { error: error.message });
-      console.error('❌ Uncaught exception:', error);
+      process.stderr.write(`❌ Uncaught exception: ${error}\n`);
       process.exit(1);
     });
 
@@ -216,7 +219,7 @@ For more information, visit: https://github.com/ljy9303/mcp-maple
       this.logger.error('Unhandled promise rejection', {
         reason: reason instanceof Error ? reason.message : String(reason),
       });
-      console.error('❌ Unhandled promise rejection:', reason);
+      process.stderr.write(`❌ Unhandled promise rejection: ${reason}\n`);
       process.exit(1);
     });
   }
@@ -242,8 +245,8 @@ For more information, visit: https://github.com/ljy9303/mcp-maple
         error: error instanceof Error ? error.message : String(error),
       });
 
-      console.error('\n❌ Application startup failed:');
-      console.error(`   ${error instanceof Error ? error.message : String(error)}`);
+      process.stderr.write('\n❌ Application startup failed:\n');
+      process.stderr.write(`   ${error instanceof Error ? error.message : String(error)}\n`);
       process.exit(1);
     }
   }
@@ -253,7 +256,7 @@ For more information, visit: https://github.com/ljy9303/mcp-maple
 if (require.main === module) {
   const app = new CliApp();
   app.run().catch((error) => {
-    console.error('Fatal error:', error);
+    process.stderr.write(`Fatal error: ${error}\n`);
     process.exit(1);
   });
 }
