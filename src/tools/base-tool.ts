@@ -189,6 +189,20 @@ export abstract class BaseTool implements ITool {
   }
 
   /**
+   * Helper method to get optional boolean parameter with default value
+   */
+  protected getOptionalBoolean(args: Record<string, any>, key: string, defaultValue = false): boolean {
+    const value = args[key];
+    if (value === undefined || value === null) {
+      return defaultValue;
+    }
+    if (typeof value !== 'boolean') {
+      throw new Error(`Parameter '${key}' must be a boolean`);
+    }
+    return value;
+  }
+
+  /**
    * Helper method to validate date format (YYYY-MM-DD)
    */
   protected validateDateFormat(date: string): boolean {

@@ -127,21 +127,4 @@ export class HealthCheckTool extends EnhancedBaseTool {
     return true;
   }
 
-  /**
-   * Helper method to safely get optional boolean parameter
-   */
-  private getOptionalBoolean(
-    args: Record<string, any>,
-    key: string,
-    defaultValue = false
-  ): boolean {
-    const value = args[key];
-    if (value === undefined || value === null) {
-      return defaultValue;
-    }
-    if (typeof value !== 'boolean') {
-      throw new Error(`Parameter '${key}' must be a boolean`);
-    }
-    return value;
-  }
 }

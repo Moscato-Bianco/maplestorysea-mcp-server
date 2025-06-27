@@ -10,10 +10,30 @@ export { ToolCategory } from './base-tool';
 // Utility tools
 export { HealthCheckTool } from './health-check-tool';
 
+// Character tools
+export {
+  GetCharacterBasicInfoTool,
+  GetCharacterStatsTool,
+  GetCharacterEquipmentTool,
+  GetCharacterFullInfoTool,
+} from './character-tools';
+
 // Import all tools
 import { HealthCheckTool } from './health-check-tool';
+import {
+  GetCharacterBasicInfoTool,
+  GetCharacterStatsTool,
+  GetCharacterEquipmentTool,
+  GetCharacterFullInfoTool,
+} from './character-tools';
 
 // Tool factory for creating all available tools
 export function createAllTools() {
-  return [new HealthCheckTool()];
+  return [
+    new HealthCheckTool(),
+    new GetCharacterBasicInfoTool(),
+    new GetCharacterStatsTool(),
+    new GetCharacterEquipmentTool(),
+    new GetCharacterFullInfoTool(),
+  ];
 }
