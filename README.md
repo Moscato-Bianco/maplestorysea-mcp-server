@@ -1,8 +1,6 @@
 # MapleStory MCP Server 🍁
 
-> **⚠️ NOTICE**: This package has been renamed to [`maplestory-mcp-server`](https://www.npmjs.com/package/maplestory-mcp-server) for better discoverability and standardization. Please use the new package for future installations.
-
-NEXON 메이플스토리 오픈 API 데이터에 접근할 수 있는 종합적인 MCP(Model Context Protocol) 서버입니다. Claude 및 기타 MCP 호환 AI 어시스턴트를 통해 캐릭터 정보, 유니온 세부사항, 길드 데이터, 랭킹, 게임 메커니즘에 구조화된 접근을 제공합니다.
+NEXON 메이플스토리 오픈 API 데이터에 접근할 수 있는 종합적인 MCP(Model Context Protocol) 서버입니다. Claude Desktop 및 기타 MCP 호환 AI 어시스턴트를 통해 캐릭터 정보, 유니온 세부사항, 길드 데이터, 랭킹, 게임 메커니즘에 구조화된 접근을 제공합니다.
 
 ## ✨ 기능
 
@@ -18,24 +16,14 @@ NEXON 메이플스토리 오픈 API 데이터에 접근할 수 있는 종합적�
 
 ## 🚀 빠른 시작
 
-> **🔄 Migration Notice**: If you're using the old `mcp-maple` package, please switch to `maplestory-mcp-server` for the latest updates and better support.
-
 ### NPX 사용 (권장)
 ```bash
-# New package (recommended)
 npx maplestory-mcp-server --api-key YOUR_NEXON_API_KEY
-
-# Legacy support (still works)
-npx mcp-maple --api-key YOUR_NEXON_API_KEY
 ```
 
 ### 설치
 ```bash
-# New package (recommended)
 npm install -g maplestory-mcp-server
-
-# Legacy package
-npm install -g mcp-maple
 ```
 
 ### 🖥️ Claude Desktop과 함께 사용
@@ -75,21 +63,6 @@ npm install -g mcp-maple
     "maplestory-mcp-server": {
       "command": "npx",
       "args": ["-y", "maplestory-mcp-server"],
-      "env": {
-        "NEXON_API_KEY": "여기에_발급받은_API_키_입력"
-      }
-    }
-  }
-}
-```
-
-**Legacy Configuration (still supported):**
-```json
-{
-  "mcpServers": {
-    "mcp-maple": {
-      "command": "npx", 
-      "args": ["-y", "mcp-maple"],
       "env": {
         "NEXON_API_KEY": "여기에_발급받은_API_키_입력"
       }
