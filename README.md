@@ -1,41 +1,41 @@
 # MCP Maple 🍁
 
-A comprehensive Model Context Protocol (MCP) server for accessing NEXON MapleStory Open API data. This tool provides structured access to character information, union details, guild data, rankings, and game mechanics through Claude and other MCP-compatible AI assistants.
+NEXON 메이플스토리 오픈 API 데이터에 접근할 수 있는 종합적인 MCP(Model Context Protocol) 서버입니다. Claude 및 기타 MCP 호환 AI 어시스턴트를 통해 캐릭터 정보, 유니온 세부사항, 길드 데이터, 랭킹, 게임 메커니즘에 구조화된 접근을 제공합니다.
 
-## ✨ Features
+## ✨ 기능
 
-- **Character Information**: Get detailed character stats, equipment, and basic info
-- **Union System**: Access union raider configurations and rankings
-- **Guild Management**: Retrieve guild information and member details
-- **Rankings**: Access various leaderboards and competitive data
-- **Game Mechanics**: Probability information for cubes and starforce enhancement
-- **Game Updates**: Latest notices and announcements
-- **TypeScript Support**: Full type safety and IntelliSense support
-- **Comprehensive Logging**: Detailed operation logging for debugging
-- **Error Handling**: Robust error handling with detailed error messages
+- **캐릭터 정보**: 상세한 캐릭터 스탯, 장비, 기본 정보 조회
+- **유니온 시스템**: 유니온 공격대 구성 및 랭킹 접근
+- **길드 관리**: 길드 정보 및 멤버 세부사항 조회
+- **랭킹**: 다양한 리더보드 및 경쟁 데이터 접근
+- **게임 메커니즘**: 큐브 및 스타포스 강화 확률 정보
+- **게임 업데이트**: 최신 공지사항 및 발표
+- **TypeScript 지원**: 완전한 타입 안전성 및 IntelliSense 지원
+- **종합적인 로깅**: 디버깅을 위한 상세한 작업 로깅
+- **오류 처리**: 상세한 오류 메시지와 함께 강력한 오류 처리
 
-## 🚀 Quick Start
+## 🚀 빠른 시작
 
-### NPX Usage (Recommended)
+### NPX 사용 (권장)
 ```bash
 npx mcp-maple --api-key YOUR_NEXON_API_KEY
 ```
 
-### Installation
+### 설치
 ```bash
 npm install -g mcp-maple
 ```
 
-### Usage with Claude Desktop
+### Claude Desktop과 함께 사용
 
-Add to your Claude Desktop MCP configuration (`claude_desktop_config.json`):
+Claude Desktop MCP 설정에 추가 (`claude_desktop_config.json`):
 
 ```json
 {
   "mcpServers": {
     "mcp-maple": {
       "command": "npx",
-      "args": ["-y", "mcp-maple", "--api-key", "YOUR_NEXON_API_KEY"],
+      "args": ["-y", "mcp-maple"],
       "env": {
         "NEXON_API_KEY": "YOUR_NEXON_API_KEY"
       }
@@ -44,109 +44,109 @@ Add to your Claude Desktop MCP configuration (`claude_desktop_config.json`):
 }
 ```
 
-## 🛠️ Available MCP Tools
+## 🛠️ 사용 가능한 MCP 도구
 
-### Character Tools
-- `get_character_basic_info` - Get basic character information (level, job, world, guild)
-- `get_character_stats` - Get detailed character statistics and combat stats
-- `get_character_equipment` - Get character equipment and item details
-- `get_character_full_info` - Get comprehensive character information in one call
+### 캐릭터 도구
+- `get_character_basic_info` - 기본 캐릭터 정보 조회 (레벨, 직업, 월드, 길드)
+- `get_character_stats` - 상세한 캐릭터 스탯 및 전투 스탯 조회
+- `get_character_equipment` - 캐릭터 장비 및 아이템 세부사항 조회
+- `get_character_full_info` - 종합적인 캐릭터 정보를 한 번에 조회
 
-### Union Tools
-- `get_union_info` - Get union level, grade, and artifact information
-- `get_union_raider` - Get union raider board configuration and blocks
-- `get_union_ranking` - Get union power rankings
+### 유니온 도구
+- `get_union_info` - 유니온 레벨, 등급, 아티팩트 정보 조회
+- `get_union_raider` - 유니온 공격대 보드 구성 및 블록 조회
+- `get_union_ranking` - 유니온 파워 랭킹 조회
 
-### Guild Tools
-- `get_guild_info` - Get guild information, members, and skills
-- `get_guild_ranking` - Get guild level rankings
+### 길드 도구
+- `get_guild_info` - 길드 정보, 멤버, 스킬 조회
+- `get_guild_ranking` - 길드 레벨 랭킹 조회
 
-### Ranking Tools
-- `get_overall_ranking` - Get overall level rankings with filtering options
+### 랭킹 도구
+- `get_overall_ranking` - 필터링 옵션이 포함된 종합 레벨 랭킹 조회
 
-### Utility Tools
-- `get_notice_list` - Get game notices and announcements
-- `get_notice_detail` - Get detailed notice information
-- `get_cube_probability` - Get cube enhancement probability information
-- `get_starforce_probability` - Get starforce enhancement probability information
-- `health_check` - Check API connectivity and status
+### 유틸리티 도구
+- `get_notice_list` - 게임 공지사항 및 발표 조회
+- `get_notice_detail` - 상세한 공지사항 정보 조회
+- `get_cube_probability` - 큐브 강화 확률 정보 조회
+- `get_starforce_probability` - 스타포스 강화 확률 정보 조회
+- `health_check` - API 연결 및 상태 확인
 
-## 📖 Usage Examples
+## 📖 사용 예시
 
-### Getting Character Information
+### 캐릭터 정보 조회
 ```typescript
-// Get basic character info
+// 기본 캐릭터 정보 조회
 const basicInfo = await getCharacterBasicInfo({
   characterName: "스카니아용사"
 });
 
-// Get detailed character stats
+// 상세한 캐릭터 스탯 조회
 const stats = await getCharacterStats({
   characterName: "스카니아용사",
   date: "2024-01-15"
 });
 
-// Get character equipment
+// 캐릭터 장비 조회
 const equipment = await getCharacterEquipment({
   characterName: "스카니아용사"
 });
 ```
 
-### Union and Guild Data
+### 유니온 및 길드 데이터
 ```typescript
-// Get union information
+// 유니온 정보 조회
 const unionInfo = await getUnionInfo({
   characterName: "스카니아용사"
 });
 
-// Get guild information
+// 길드 정보 조회
 const guildInfo = await getGuildInfo({
   guildName: "길드명",
   worldName: "스카니아"
 });
 ```
 
-### Rankings and Leaderboards
+### 랭킹 및 리더보드
 ```typescript
-// Get overall rankings
+// 종합 랭킹 조회
 const rankings = await getOverallRanking({
   worldName: "스카니아",
   className: "아크메이지(불,독)",
   page: 1
 });
 
-// Get union rankings
+// 유니온 랭킹 조회
 const unionRankings = await getUnionRanking({
   worldName: "스카니아",
   page: 1
 });
 ```
 
-## 🔧 Configuration
+## 🔧 설정
 
-### Environment Variables
-- `NEXON_API_KEY` - Your NEXON Open API key (required)
-- `LOG_LEVEL` - Logging level (default: "info")
-- `NODE_ENV` - Environment (development/production)
+### 환경 변수
+- `NEXON_API_KEY` - NEXON 오픈 API 키 (필수)
+- `LOG_LEVEL` - 로깅 레벨 (기본값: "info")
+- `NODE_ENV` - 환경 (development/production)
 
-### CLI Options
-- `--api-key` - NEXON API key
-- `--port` - Server port (default: 3000)
-- `--debug` - Enable debug logging
-- `--name` - Server name (default: "mcp-maple")
-- `--version` - Server version
+### CLI 옵션
+- `--api-key` - NEXON API 키
+- `--port` - 서버 포트 (기본값: 3000)
+- `--debug` - 디버그 로깅 활성화
+- `--name` - 서버 이름 (기본값: "mcp-maple")
+- `--version` - 서버 버전
 
-## 🔑 Getting NEXON API Key
+## 🔑 NEXON API 키 얻기
 
-1. Visit [NEXON Open API Portal](https://openapi.nexon.com/)
-2. Sign up and verify your account
-3. Create a new application
-4. Copy your API key
-5. Use it with the `--api-key` parameter or `NEXON_API_KEY` environment variable
+1. [NEXON 오픈 API 포털](https://openapi.nexon.com/) 방문
+2. 계정 가입 및 인증
+3. 새 애플리케이션 생성
+4. API 키 복사
+5. `--api-key` 매개변수 또는 `NEXON_API_KEY` 환경변수로 사용
 
-## 🎮 Supported Games & Worlds
+## 🎮 지원되는 게임 및 월드
 
-### MapleStory Worlds
+### 메이플스토리 월드
 - 스카니아 (Scania)
 - 베라 (Bera)
 - 루나 (Luna)
@@ -162,22 +162,22 @@ const unionRankings = await getUnionRanking({
 - 리부트 (Reboot)
 - 리부트2 (Reboot2)
 
-## 🚦 Rate Limits & Best Practices
+## 🚦 요청 제한 및 모범 사례
 
-- **Rate Limit**: 500 requests per day per API key
-- **Request Frequency**: Maximum 1 request per second
-- **Data Freshness**: Character data is updated daily
-- **Cache**: Results are cached for better performance
-- **Error Handling**: Automatic retry for transient failures
+- **요청 제한**: API 키당 하루 500회 요청
+- **요청 빈도**: 초당 최대 1회 요청
+- **데이터 갱신**: 캐릭터 데이터는 매일 업데이트
+- **캐시**: 더 나은 성능을 위한 결과 캐싱
+- **오류 처리**: 일시적 실패에 대한 자동 재시도
 
-## 🧪 Development
+## 🧪 개발
 
-### Prerequisites
+### 전제 조건
 - Node.js 18+ 
 - TypeScript 5.4+
-- NEXON API key
+- NEXON API 키
 
-### Setup
+### 설정
 ```bash
 git clone https://github.com/ljy9303/mcp-maple.git
 cd mcp-maple
@@ -185,73 +185,66 @@ npm install
 npm run build
 ```
 
-### Testing
+### 빌드
 ```bash
-npm test                # Run tests
-npm run test:coverage   # Run tests with coverage
-npm run test:watch      # Run tests in watch mode
+npm run build          # TypeScript 빌드
+npm run dev            # 개발 모드 (watch)
 ```
 
-### Building
-```bash
-npm run build          # Build TypeScript
-npm run dev            # Development with watch
-```
+## 📚 API 참조
 
-## 📚 API Reference
-
-### Character Information Tools
+### 캐릭터 정보 도구
 
 #### `get_character_basic_info`
-Get basic character information including level, job, world, and guild.
+레벨, 직업, 월드, 길드를 포함한 기본 캐릭터 정보를 조회합니다.
 
-**Parameters:**
-- `characterName` (string, required): Character name to look up
-- `date` (string, optional): Date in YYYY-MM-DD format
+**매개변수:**
+- `characterName` (string, 필수): 조회할 캐릭터 이름
+- `date` (string, 선택사항): YYYY-MM-DD 형식의 날짜
 
-**Returns:**
-- `characterName`: Character name
-- `level`: Character level
-- `job`: Character job/class
-- `world`: World/server name
-- `guildName`: Guild name (if any)
-- `exp`: Current experience points
-- `expRate`: Experience rate percentage
+**반환값:**
+- `characterName`: 캐릭터 이름
+- `level`: 캐릭터 레벨
+- `job`: 캐릭터 직업/클래스
+- `world`: 월드/서버 이름
+- `guildName`: 길드 이름 (있는 경우)
+- `exp`: 현재 경험치
+- `expRate`: 경험치 비율 백분율
 
 #### `get_character_stats`
-Get detailed character statistics including damage, critical rate, and all combat stats.
+데미지, 크리티컬 확률, 모든 전투 스탯을 포함한 상세한 캐릭터 통계를 조회합니다.
 
-**Parameters:**
-- `characterName` (string, required): Character name to look up
-- `date` (string, optional): Date in YYYY-MM-DD format
+**매개변수:**
+- `characterName` (string, 필수): 조회할 캐릭터 이름
+- `date` (string, 선택사항): YYYY-MM-DD 형식의 날짜
 
-**Returns:**
+**반환값:**
 - `basicStats`: STR, DEX, INT, LUK, HP, MP
-- `combatStats`: Attack power, magic power, critical stats
-- `defenseStats`: Physical/magical defense stats
-- `allStats`: Complete stat breakdown
+- `combatStats`: 공격력, 마력, 크리티컬 스탯
+- `defenseStats`: 물리/마법 방어 스탯
+- `allStats`: 완전한 스탯 분석
 
-### Union Tools
+### 유니온 도구
 
 #### `get_union_info`
-Get union level, grade, and artifact information.
+유니온 레벨, 등급, 아티팩트 정보를 조회합니다.
 
-**Parameters:**
-- `characterName` (string, required): Character name to look up
-- `date` (string, optional): Date in YYYY-MM-DD format
+**매개변수:**
+- `characterName` (string, 필수): 조회할 캐릭터 이름
+- `date` (string, 선택사항): YYYY-MM-DD 형식의 날짜
 
-**Returns:**
-- `unionLevel`: Current union level
-- `unionGrade`: Union grade/rank
-- `unionArtifact`: Artifact level and points
+**반환값:**
+- `unionLevel`: 현재 유니온 레벨
+- `unionGrade`: 유니온 등급/랭크
+- `unionArtifact`: 아티팩트 레벨 및 포인트
 
-### Error Handling
+### 오류 처리
 
-All tools return consistent error information:
+모든 도구는 일관된 오류 정보를 반환합니다:
 ```typescript
 {
   success: false,
-  error: "Error description",
+  error: "오류 설명",
   metadata?: {
     executionTime: number,
     apiCalls: number
@@ -259,40 +252,40 @@ All tools return consistent error information:
 }
 ```
 
-## 🤝 Contributing
+## 🤝 기여하기
 
-Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details.
+기여를 환영합니다! 자세한 내용은 [기여 가이드](CONTRIBUTING.md)를 읽어주세요.
 
-### Development Process
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Ensure all tests pass
-6. Submit a pull request
+### 개발 프로세스
+1. 저장소를 포크합니다
+2. 기능 브랜치를 생성합니다
+3. 변경사항을 작성합니다
+4. 테스트를 추가합니다
+5. 모든 테스트가 통과하는지 확인합니다
+6. 풀 리퀘스트를 제출합니다
 
-## 📄 License
+## 📄 라이선스
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+이 프로젝트는 MIT 라이선스에 따라 라이선스가 부여됩니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 
-## 🙏 Acknowledgments
+## 🙏 감사의 말
 
-- [NEXON](https://www.nexon.com/) for providing the MapleStory Open API
-- [Model Context Protocol](https://modelcontextprotocol.io/) for the MCP specification
-- [Anthropic](https://www.anthropic.com/) for Claude and MCP tooling
+- 메이플스토리 오픈 API를 제공해 주신 [NEXON](https://www.nexon.com/)
+- MCP 사양을 제공해 주신 [Model Context Protocol](https://modelcontextprotocol.io/)
+- Claude 및 MCP 도구를 제공해 주신 [Anthropic](https://www.anthropic.com/)
 
-## 📞 Support
+## 📞 지원
 
-- **Issues**: [GitHub Issues](https://github.com/ljy9303/mcp-maple/issues)
-- **Documentation**: [API Reference](docs/API_REFERENCE.md)
-- **Examples**: [Usage Examples](docs/EXAMPLES.md)
+- **이슈**: [GitHub Issues](https://github.com/ljy9303/mcp-maple/issues)
+- **문서**: [API 참조](docs/API_REFERENCE.md)
+- **예시**: [사용 예시](docs/EXAMPLES.md)
 
-## 🔗 Related Projects
+## 🔗 관련 프로젝트
 
 - [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
 - [Claude Desktop](https://claude.ai/desktop)
-- [NEXON Open API](https://openapi.nexon.com/)
+- [NEXON 오픈 API](https://openapi.nexon.com/)
 
 ---
 
-Made with ❤️ for the MapleStory community
+메이플스토리 커뮤니티를 위해 ❤️로 제작되었습니다
