@@ -1,6 +1,6 @@
 {
   "name": "mcp-maple",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "NEXON 메이플스토리 오픈 API MCP 서버 - 캐릭터 정보, 유니온 세부사항, 길드 데이터, 랭킹, 게임 메커니즘 종합 서비스",
   "main": "dist/index.js",
   "bin": {
