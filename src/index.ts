@@ -35,7 +35,7 @@ class CliApp {
     program
       .name('mcp-maple')
       .description('MapleStory API Model Context Protocol Server')
-      .version('1.0.0')
+      .version('1.0.1')
       .option(
         '--api-key <key>',
         'NEXON API key (can also be set via NEXON_API_KEY environment variable)'
@@ -105,7 +105,7 @@ For more information, visit: https://github.com/ljy9303/mcp-maple
     const config = {
       nexonApiKey: apiKey.trim(),
       name: options.name || 'mcp-maple',
-      version: options.version || '1.0.0',
+      version: options.version || '1.0.1',
       debug: options.debug || false,
     } as {
       nexonApiKey: string;

@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "mcp-maple": {
+      "command": "npx",
+      "args": ["-y", "mcp-maple"],
+      "env": {
+        "NEXON_API_KEY": "test_ad3d7e1b077a2fd3a09cbb763bd499f66dd1f2de543c377a874e24ec31024e46efe8d04e6d233bd35cf2fabdeb93fb0d",
+        "LOG_LEVEL": "info",
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}
