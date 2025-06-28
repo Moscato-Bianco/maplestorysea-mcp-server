@@ -38,6 +38,15 @@ import {
   calculateCombatPower,
   calculateEnhancementScore 
 } from '../utils/equipment-analyzer';
+import {
+  validateGuildName,
+  validateGuildId,
+  sanitizeGuildName,
+  calculateFuzzyScore,
+  generateGuildNameVariations,
+  calculateGuildScore,
+  GuildCacheKeys
+} from '../utils/guild-utils';
 
 export class NexonApiClient {
   private client: AxiosInstance;
@@ -535,14 +544,266 @@ export class NexonApiClient {
 
   // Guild API methods
   async getGuildId(guildName: string, worldName: string): Promise<{ oguild_id: string }> {
-    return this.request(ENDPOINTS.GUILD.ID, {
-      guild_name: guildName,
-      world_name: worldName,
-    });
+    // Validate and sanitize inputs
+    const sanitizedGuildName = sanitizeGuildName(guildName);
+    const sanitizedWorldName = sanitizeWorldName(worldName);
+    
+    validateGuildName(sanitizedGuildName);
+    validateWorldName(sanitizedWorldName);
+
+    // Check cache first
+    const cacheKey = GuildCacheKeys.guildId(sanitizedGuildName, sanitizedWorldName);
+    const cachedResult = this.cache.get<{ oguild_id: string }>(cacheKey);
+    
+    if (cachedResult) {
+      this.logger.info('Guild ID lookup cache hit', { 
+        guildName: sanitizedGuildName, 
+        worldName: sanitizedWorldName 
+      });
+      return cachedResult;
+    }
+
+    try {
+      const result = await this.request<{ oguild_id: string }>(ENDPOINTS.GUILD.ID, {
+        guild_name: sanitizedGuildName,
+        world_name: sanitizedWorldName,
+      });
+
+      // Validate guild ID before caching
+      validateGuildId(result.oguild_id);
+
+      // Cache for 2 hours (guild IDs rarely change)
+      this.cache.set(cacheKey, result, 7200000);
+      
+      this.logger.info('Guild ID lookup successful', { 
+        guildName: sanitizedGuildName, 
+        worldName: sanitizedWorldName,
+        guildId: result.oguild_id 
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error('Guild ID lookup failed', { 
+        guildName: sanitizedGuildName, 
+        worldName: sanitizedWorldName,
+        error 
+      });
+      throw error;
+    }
   }
 
   async getGuildBasic(oguildId: string, date?: string): Promise<GuildBasic> {
-    return this.request(ENDPOINTS.GUILD.BASIC, { oguild_id: oguildId, date });
+    // Validate inputs
+    validateGuildId(oguildId);
+    if (date) {
+      validateDate(date);
+    }
+
+    // Check cache first
+    const cacheKey = GuildCacheKeys.guildBasic(oguildId, date);
+    const cachedResult = this.cache.get<GuildBasic>(cacheKey);
+    
+    if (cachedResult) {
+      this.logger.info('Guild basic info cache hit', { oguildId, date });
+      return cachedResult;
+    }
+
+    try {
+      const params: Record<string, any> = { oguild_id: oguildId };
+      if (date) {
+        params.date = date;
+      }
+
+      const result = await this.request<GuildBasic>(ENDPOINTS.GUILD.BASIC, params);
+
+      // Cache for 1 hour (guild info changes moderately)
+      this.cache.set(cacheKey, result, 3600000);
+      
+      this.logger.info('Guild basic info lookup successful', { 
+        oguildId, 
+        date,
+        guildName: result.guild_name,
+        guildLevel: result.guild_level,
+        memberCount: result.guild_member_count 
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error('Guild basic info lookup failed', { 
+        oguildId, 
+        date,
+        error 
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Search for guilds with fuzzy matching
+   */
+  async searchGuilds(searchTerm: string, worldName: string, limit: number = 10): Promise<Array<{
+    guildName: string;
+    guildId: string;
+    matchScore: number;
+    guildInfo?: GuildBasic;
+  }>> {
+    const sanitizedSearchTerm = sanitizeGuildName(searchTerm);
+    const sanitizedWorldName = sanitizeWorldName(worldName);
+    
+    validateGuildName(sanitizedSearchTerm);
+    validateWorldName(sanitizedWorldName);
+
+    // Check cache first
+    const cacheKey = GuildCacheKeys.guildSearch(sanitizedSearchTerm, sanitizedWorldName);
+    const cachedResult = this.cache.get<any[]>(cacheKey);
+    
+    if (cachedResult) {
+      this.logger.info('Guild search cache hit', { searchTerm: sanitizedSearchTerm, worldName: sanitizedWorldName });
+      return cachedResult.slice(0, limit);
+    }
+
+    try {
+      // Generate name variations for better search results
+      const nameVariations = generateGuildNameVariations(sanitizedSearchTerm);
+      const searchResults: Array<{
+        guildName: string;
+        guildId: string;
+        matchScore: number;
+        guildInfo?: GuildBasic;
+      }> = [];
+
+      // Try each variation
+      for (const variation of nameVariations) {
+        try {
+          const result = await this.getGuildId(variation, sanitizedWorldName);
+          const guildInfo = await this.getGuildBasic(result.oguild_id);
+          
+          const matchScore = calculateFuzzyScore(sanitizedSearchTerm, guildInfo.guild_name || variation);
+          
+          searchResults.push({
+            guildName: guildInfo.guild_name || variation,
+            guildId: result.oguild_id,
+            matchScore,
+            guildInfo
+          });
+        } catch (error) {
+          // Guild not found with this variation, continue
+          this.logger.debug('Guild not found with variation', { variation, error });
+        }
+      }
+
+      // Sort by match score and remove duplicates
+      const uniqueResults = searchResults
+        .filter((result, index, array) => 
+          array.findIndex(r => r.guildId === result.guildId) === index
+        )
+        .sort((a, b) => b.matchScore - a.matchScore)
+        .slice(0, limit);
+
+      // Cache for 30 minutes
+      this.cache.set(cacheKey, uniqueResults, 1800000);
+      
+      this.logger.info('Guild search completed', { 
+        searchTerm: sanitizedSearchTerm, 
+        worldName: sanitizedWorldName,
+        resultsCount: uniqueResults.length 
+      });
+
+      return uniqueResults;
+    } catch (error) {
+      this.logger.error('Guild search failed', { 
+        searchTerm: sanitizedSearchTerm, 
+        worldName: sanitizedWorldName,
+        error 
+      });
+      return [];
+    }
+  }
+
+  /**
+   * Get comprehensive guild analysis
+   */
+  async getGuildAnalysis(guildName: string, worldName: string, date?: string) {
+    try {
+      const { oguild_id } = await this.getGuildId(guildName, worldName);
+      const guildBasic = await this.getGuildBasic(oguild_id, date);
+      
+      // Calculate guild metrics
+      const guildScore = calculateGuildScore(guildBasic);
+      
+      // Get guild ranking position (if available)
+      let rankingPosition: number | null = null;
+      try {
+        const ranking = await this.getGuildRanking(worldName, 0, guildName, 1, date);
+        if (ranking.ranking && ranking.ranking.length > 0) {
+          rankingPosition = ranking.ranking[0]?.ranking || null;
+        }
+      } catch (error) {
+        this.logger.debug('Guild ranking lookup failed', { guildName, worldName, error });
+      }
+
+      const analysis = {
+        basic: guildBasic,
+        metrics: {
+          guildScore,
+          level: guildBasic.guild_level,
+          memberCount: guildBasic.guild_member_count,
+          rankingPosition,
+        },
+        recommendations: this.generateGuildRecommendations(guildBasic, rankingPosition)
+      };
+
+      this.logger.info('Guild analysis completed', { 
+        guildName, 
+        worldName,
+        guildScore,
+        rankingPosition 
+      });
+
+      return {
+        guildId: oguild_id,
+        ...analysis
+      };
+    } catch (error) {
+      this.logger.error('Guild analysis failed', { 
+        guildName, 
+        worldName,
+        error 
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Generate guild improvement recommendations
+   */
+  private generateGuildRecommendations(guildBasic: any, rankingPosition: number | null): string[] {
+    const recommendations: string[] = [];
+    
+    const level = guildBasic.guild_level || 0;
+    const memberCount = guildBasic.guild_member_count || 0;
+    
+    // Level recommendations
+    if (level < 10) {
+      recommendations.push('길드 레벨을 올려 더 많은 혜택을 받을 수 있습니다.');
+    }
+    
+    // Member count recommendations
+    if (memberCount < 50) {
+      recommendations.push('더 많은 멤버를 모집하여 길드 활동을 활성화할 수 있습니다.');
+    }
+    
+    // Ranking recommendations
+    if (rankingPosition && rankingPosition > 100) {
+      recommendations.push('길드 랭킹 향상을 위해 멤버들의 활동을 늘려보세요.');
+    }
+    
+    // General recommendations
+    if (recommendations.length === 0) {
+      recommendations.push('훌륭한 길드입니다! 현재 상태를 유지하세요.');
+    }
+    
+    return recommendations;
   }
 
   // Ranking API methods
