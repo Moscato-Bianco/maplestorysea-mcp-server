@@ -1,10 +1,10 @@
 {
-  "name": "maplestory-mcp-server",
-  "version": "1.0.2",
-  "description": "Official-style NEXON MapleStory MCP Server for Claude Desktop - Complete character info, union details, guild data, rankings, and game mechanics",
+  "name": "maplestorysea-mcp-server",
+  "version": "2.0.0",
+  "description": "NEXON MapleStory SEA API MCP Server for Claude Desktop - Complete character info, union details, guild data, rankings optimized for SEA servers",
   "main": "dist/index.js",
   "bin": {
-    "maplestory-mcp-server": "dist/index.js"
+    "maplestorysea-mcp-server": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -27,6 +27,8 @@
   },
   "keywords": [
     "maplestory",
+    "maplestory-sea",
+    "sea-api",
     "mcp",
     "nexon",
     "model-context-protocol",
@@ -44,18 +46,19 @@
     "ranking",
     "maple",
     "game-api",
-    "anthropic"
+    "anthropic",
+    "southeast-asia"
   ],
   "author": "ljy9303",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ljy9303/maplestory-mcp-server.git"
+    "url": "git+https://github.com/Moscato-Bianco/maplestorysea-mcp-server.git"
   },
   "bugs": {
-    "url": "https://github.com/ljy9303/maplestory-mcp-server/issues"
+    "url": "https://github.com/Moscato-Bianco/maplestorysea-mcp-server/issues"
   },
-  "homepage": "https://github.com/ljy9303/maplestory-mcp-server#readme",
+  "homepage": "https://github.com/Moscato-Bianco/maplestorysea-mcp-server#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "ajv": "^8.17.1",
