@@ -10,6 +10,8 @@ import { McpServer } from './server/mcp-server';
 import { createAllTools } from './tools';
 import { McpLogger } from './utils/logger';
 
+const packageJson = require('../package.json');
+
 interface CliOptions {
   port?: number;
   debug?: boolean;
@@ -35,7 +37,7 @@ class CliApp {
     program
       .name('mcp-maple')
       .description('MapleStory API Model Context Protocol Server')
-      .version('1.0.2')
+      .version(packageJson.version)
       .option(
         '--api-key <key>',
         'NEXON API key (can also be set via NEXON_API_KEY environment variable)'

@@ -252,6 +252,12 @@ export function createNexonApiError(
   switch (statusCode) {
     case 401:
       return new InvalidApiKeyError();
+    case 403:
+      // Handle access denied errors - often API key doesn't have proper permissions
+      if (message.toLowerCase().includes('access denied')) {
+        return new AuthorizationError('NEXON API', 'access data with provided API key');
+      }
+      return new AuthorizationError('API endpoint', 'access');
     case 404:
       if (endpoint?.includes('character')) {
         const characterName = params?.character_name || 'unknown';

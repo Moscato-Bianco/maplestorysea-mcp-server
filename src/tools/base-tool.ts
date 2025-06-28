@@ -132,9 +132,30 @@ export abstract class BaseTool implements ITool {
    * Helper method to format error results consistently
    */
   protected formatError(error: string | Error, metadata?: Record<string, any>): ToolResult {
+    let errorMessage: string;
+    let errorDetails: any;
+
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      // Include additional error information if available
+      if ('toJSON' in error && typeof error.toJSON === 'function') {
+        errorDetails = error.toJSON();
+      } else if ('code' in error || 'statusCode' in error) {
+        errorDetails = {
+          name: error.name,
+          code: (error as any).code,
+          statusCode: (error as any).statusCode,
+          context: (error as any).context
+        };
+      }
+    } else {
+      errorMessage = error;
+    }
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : error,
+      error: errorMessage,
+      ...(errorDetails && { errorDetails }),
       ...(metadata && { metadata }),
     };
   }

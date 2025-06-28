@@ -75,11 +75,27 @@ export class ApiHealthChecker extends HealthChecker {
     } catch (error) {
       const responseTime = Date.now() - startTime;
 
+      let errorMessage: string;
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        // Include more context for NEXON API errors
+        if ('code' in error || 'statusCode' in error) {
+          const extra = [];
+          if ('statusCode' in error) extra.push(`Status: ${(error as any).statusCode}`);
+          if ('code' in error) extra.push(`Code: ${(error as any).code}`);
+          if (extra.length > 0) {
+            errorMessage += ` (${extra.join(', ')})`;
+          }
+        }
+      } else {
+        errorMessage = String(error);
+      }
+
       return {
         status: 'unhealthy',
         lastCheck: new Date().toISOString(),
         responseTime,
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage,
         details: {
           endpoint: 'ranking/overall',
           timeout,
