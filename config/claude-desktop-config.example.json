@@ -2,7 +2,7 @@
   "mcpServers": {
     "maplestory-sea": {
       "command": "npx",
-      "args": ["-y", "maplestory-mcp-server"],
+      "args": ["-y", "maplestorysea-mcp-server"],
       "env": {
         "NEXON_API_KEY": "your_nexon_api_key_here"
       }

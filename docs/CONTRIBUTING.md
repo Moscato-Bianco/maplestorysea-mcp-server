@@ -42,8 +42,8 @@ This project and everyone participating in it is governed by our Code of Conduct
 1. **Fork the repository**
    ```bash
    # Fork on GitHub, then clone your fork
-   git clone https://github.com/YOUR_USERNAME/maplestory-mcp-server.git
-   cd maplestory-mcp-server
+   git clone https://github.com/YOUR_USERNAME/maplestorysea-mcp-server.git
+   cd maplestorysea-mcp-server
    ```
 
 2. **Install dependencies**

@@ -17,12 +17,12 @@ Comprehensive MCP (Model Context Protocol) server for accessing NEXON MapleStory
 
 ### Using NPX (Recommended)
 ```bash
-npx maplestory-mcp-server --api-key YOUR_NEXON_API_KEY
+npx maplestorysea-mcp-server --api-key YOUR_NEXON_API_KEY
 ```
 
 ### Installation
 ```bash
-npm install -g maplestory-mcp-server
+npm install -g maplestorysea-mcp-server
 ```
 
 ### 🖥️ Using with Claude Desktop
@@ -61,7 +61,7 @@ Add the following to your `claude_desktop_config.json`:
   "mcpServers": {
     "maplestory-sea": {
       "command": "npx",
-      "args": ["-y", "maplestory-mcp-server"],
+      "args": ["-y", "maplestorysea-mcp-server"],
       "env": {
         "NEXON_API_KEY": "your_api_key_here"
       }
@@ -164,8 +164,8 @@ Get overall rankings for Aquila world, Arch Mage class
 
 ### Setup
 ```bash
-git clone https://github.com/ljy9303/maplestory-mcp-server.git
-cd maplestory-mcp-server
+git clone https://github.com/Moscato-Bianco/maplestorysea-mcp-server.git
+cd maplestorysea-mcp-server
 npm install
 npm run build
 ```

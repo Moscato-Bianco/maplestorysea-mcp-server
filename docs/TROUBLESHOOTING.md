@@ -23,7 +23,7 @@ First, verify the server is working:
 npm run mcp
 
 # If installed globally
-maplestory-mcp-server --health
+maplestorysea-mcp-server --health
 ```
 
 ### Environment Check
@@ -34,7 +34,7 @@ Verify your environment setup:
 node --version
 
 # Check if MCP server is installed
-npm list -g maplestory-mcp-server
+npm list -g maplestorysea-mcp-server
 
 # Verify API key is set
 echo $NEXON_API_KEY | cut -c1-10
@@ -42,7 +42,7 @@ echo $NEXON_API_KEY | cut -c1-10
 
 ## Common Issues
 
-### 1. "Command not found: maplestory-mcp-server"
+### 1. "Command not found: maplestorysea-mcp-server"
 
 **Symptoms:**
 - Shell reports command not found
@@ -51,10 +51,10 @@ echo $NEXON_API_KEY | cut -c1-10
 **Solutions:**
 ```bash
 # Solution 1: Install globally
-npm install -g maplestory-mcp-server
+npm install -g maplestorysea-mcp-server
 
 # Solution 2: Use NPX directly
-npx maplestory-mcp-server
+npx maplestorysea-mcp-server
 
 # Solution 3: Check npm global path
 npm config get prefix
@@ -95,7 +95,7 @@ Your config should look like:
   "mcpServers": {
     "maplestory-sea": {
       "command": "npx",
-      "args": ["-y", "maplestory-mcp-server"],
+      "args": ["-y", "maplestorysea-mcp-server"],
       "env": {
         "NEXON_API_KEY": "your_key_here"
       }
@@ -279,7 +279,7 @@ export LOG_LEVEL=debug
      "mcpServers": {
        "maplestory-sea": {
          "command": "npx",
-         "args": ["-y", "maplestory-mcp-server"],
+         "args": ["-y", "maplestorysea-mcp-server"],
          "env": {
            "NEXON_API_KEY": "your_key_here"
          },
@@ -529,7 +529,7 @@ When reporting issues, include:
 ### Where to Get Help
 
 1. **GitHub Issues**
-   - [Report bugs](https://github.com/ljy9303/maplestory-mcp-server/issues)
+   - [Report bugs](https://github.com/Moscato-Bianco/maplestorysea-mcp-server/issues)
    - Search existing issues first
 
 2. **Documentation**

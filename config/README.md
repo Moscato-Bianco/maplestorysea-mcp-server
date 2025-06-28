@@ -65,7 +65,7 @@ Copy the contents of `claude-desktop-config.example.json` and merge it with your
   "mcpServers": {
     "maplestory-sea": {
       "command": "npx",
-      "args": ["-y", "maplestory-mcp-server"],
+      "args": ["-y", "maplestorysea-mcp-server"],
       "env": {
         "NEXON_API_KEY": "your_actual_nexon_api_key_here"
       }

@@ -11,9 +11,9 @@ All API calls require a valid NEXON API key. Set it in your MCP configuration:
 ```json
 {
   "mcpServers": {
-    "maplestory-mcp-server": {
+    "maplestory-sea": {
       "command": "npx",
-      "args": ["-y", "maplestory-mcp-server"],
+      "args": ["-y", "maplestorysea-mcp-server"],
       "env": {
         "NEXON_API_KEY": "your_api_key_here"
       }
