@@ -32,11 +32,18 @@ export function parseStarforceLevel(item: any): number {
     return isNaN(starforce) ? 0 : starforce;
   }
 
-  // Check item name for star indicators
+  // Check item name for star indicators (Korean and English patterns)
   if (item.item_name && typeof item.item_name === 'string') {
-    const starMatch = item.item_name.match(/\((\d+)성\)/);
-    if (starMatch) {
-      return parseInt(starMatch[1], 10);
+    // Korean pattern: (숫자성)
+    const koreanStarMatch = item.item_name.match(/\((\d+)성\)/);
+    if (koreanStarMatch) {
+      return parseInt(koreanStarMatch[1], 10);
+    }
+    
+    // English patterns: (숫자stars) or (숫자★) or [숫자*]
+    const englishStarMatch = item.item_name.match(/\((\d+)(?:stars?|★|\*)\)/i);
+    if (englishStarMatch) {
+      return parseInt(englishStarMatch[1], 10);
     }
   }
 
@@ -141,11 +148,10 @@ export function analyzeSetEffects(equipment: any[]): SetEffect[] {
 function extractSetName(itemName: string): string | null {
   if (!itemName) return null;
 
-  // Common MapleStory set patterns
+  // Common MapleStory SEA set patterns
   const setPatterns = [
-    /(.+)\s세트/, // Korean set pattern
     /(.+)\sSet/i, // English set pattern
-    /(펜살리르|루타비스|넥슨|CRA|아케인|압솔|에테르넬|제네시스)/i, // Known set names
+    /(Pensalir|Utgard|Necro|CRA|Arcane|Absolab|Eternal|Genesis|Boss|Root Abyss|Von Leon|Hieizan|Princess No)/i, // Known SEA set names
   ];
 
   for (const pattern of setPatterns) {

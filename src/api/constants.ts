@@ -1,6 +1,6 @@
 /**
- * NEXON MapleStory Open API constants and endpoints
- * Official API documentation: https://openapi.nexon.com/
+ * NEXON MapleStory SEA Open API constants and endpoints
+ * Official API documentation: https://openapi.nexon.com/en/game/maplestorysea/
  */
 
 // Base API configuration
@@ -16,65 +16,49 @@ export const API_CONFIG = {
 export const ENDPOINTS = {
   // Character endpoints
   CHARACTER: {
-    OCID: '/maplestory/v1/id',
-    BASIC: '/maplestory/v1/character/basic',
-    POPULARITY: '/maplestory/v1/character/popularity',
-    STAT: '/maplestory/v1/character/stat',
-    HYPER_STAT: '/maplestory/v1/character/hyper-stat',
-    PROPENSITY: '/maplestory/v1/character/propensity',
-    ABILITY: '/maplestory/v1/character/ability',
-    ITEM_EQUIPMENT: '/maplestory/v1/character/item-equipment',
-    CASHITEM_EQUIPMENT: '/maplestory/v1/character/cashitem-equipment',
-    SYMBOL_EQUIPMENT: '/maplestory/v1/character/symbol-equipment',
-    SET_EFFECT: '/maplestory/v1/character/set-effect',
-    BEAUTY_EQUIPMENT: '/maplestory/v1/character/beauty-equipment',
-    ANDROID_EQUIPMENT: '/maplestory/v1/character/android-equipment',
-    PET_EQUIPMENT: '/maplestory/v1/character/pet-equipment',
-    SKILL: '/maplestory/v1/character/skill',
-    LINK_SKILL: '/maplestory/v1/character/link-skill',
-    VMATRIX: '/maplestory/v1/character/vmatrix',
-    HEXAMATRIX: '/maplestory/v1/character/hexamatrix',
-    HEXAMATRIX_STAT: '/maplestory/v1/character/hexamatrix-stat',
-    DOJANG: '/maplestory/v1/character/dojang',
+    OCID: '/maplestorysea/v1/id',
+    BASIC: '/maplestorysea/v1/character/basic',
+    POPULARITY: '/maplestorysea/v1/character/popularity',
+    STAT: '/maplestorysea/v1/character/stat',
+    HYPER_STAT: '/maplestorysea/v1/character/hyper-stat',
+    PROPENSITY: '/maplestorysea/v1/character/propensity',
+    ABILITY: '/maplestorysea/v1/character/ability',
+    ITEM_EQUIPMENT: '/maplestorysea/v1/character/item-equipment',
+    CASHITEM_EQUIPMENT: '/maplestorysea/v1/character/cashitem-equipment',
+    SYMBOL_EQUIPMENT: '/maplestorysea/v1/character/symbol-equipment',
+    SET_EFFECT: '/maplestorysea/v1/character/set-effect',
+    BEAUTY_EQUIPMENT: '/maplestorysea/v1/character/beauty-equipment',
+    ANDROID_EQUIPMENT: '/maplestorysea/v1/character/android-equipment',
+    PET_EQUIPMENT: '/maplestorysea/v1/character/pet-equipment',
+    SKILL: '/maplestorysea/v1/character/skill',
+    LINK_SKILL: '/maplestorysea/v1/character/link-skill',
+    VMATRIX: '/maplestorysea/v1/character/vmatrix',
+    HEXAMATRIX: '/maplestorysea/v1/character/hexamatrix',
+    HEXAMATRIX_STAT: '/maplestorysea/v1/character/hexamatrix-stat',
+    DOJANG: '/maplestorysea/v1/character/dojang',
   },
 
   // Union endpoints
   UNION: {
-    BASIC: '/maplestory/v1/user/union',
-    RAIDER: '/maplestory/v1/user/union-raider',
-    ARTIFACT: '/maplestory/v1/user/union-artifact',
+    BASIC: '/maplestorysea/v1/user/union',
+    RAIDER: '/maplestorysea/v1/user/union-raider',
+    ARTIFACT: '/maplestorysea/v1/user/union-artifact',
   },
 
   // Guild endpoints
   GUILD: {
-    ID: '/maplestory/v1/guild/id',
-    BASIC: '/maplestory/v1/guild/basic',
+    ID: '/maplestorysea/v1/guild/id',
+    BASIC: '/maplestorysea/v1/guild/basic',
   },
 
   // Ranking endpoints
   RANKING: {
-    OVERALL: '/maplestory/v1/ranking/overall',
-    UNION: '/maplestory/v1/ranking/union',
-    GUILD: '/maplestory/v1/ranking/guild',
-    DOJANG: '/maplestory/v1/ranking/dojang',
-    THESEED: '/maplestory/v1/ranking/theseed',
-    ACHIEVEMENT: '/maplestory/v1/ranking/achievement',
-  },
-
-  // Cube and Starforce probability endpoints
-  PROBABILITY: {
-    CUBE: '/maplestory/v1/cube-use-results',
-    POTENTIAL: '/maplestory/v1/potential/history',
-    STARFORCE: '/maplestory/v1/starforce/history',
-  },
-
-  // Notice endpoints
-  NOTICE: {
-    LIST: '/maplestory/v1/notice',
-    DETAIL: '/maplestory/v1/notice/detail',
-    UPDATE: '/maplestory/v1/notice-update',
-    EVENT: '/maplestory/v1/notice-event',
-    CASHSHOP: '/maplestory/v1/notice-cashshop',
+    OVERALL: '/maplestorysea/v1/ranking/overall',
+    UNION: '/maplestorysea/v1/ranking/union',
+    GUILD: '/maplestorysea/v1/ranking/guild',
+    DOJANG: '/maplestorysea/v1/ranking/dojang',
+    THESEED: '/maplestorysea/v1/ranking/theseed',
+    ACHIEVEMENT: '/maplestorysea/v1/ranking/achievement',
   },
 } as const;
 
@@ -97,78 +81,103 @@ export const HTTP_STATUS = {
   SERVICE_UNAVAILABLE: 503,
 } as const;
 
-// Error messages
+// Error messages for SEA API
 export const ERROR_MESSAGES = {
-  INVALID_API_KEY: 'Invalid API key provided',
-  RATE_LIMIT_EXCEEDED: 'API rate limit exceeded',
-  CHARACTER_NOT_FOUND: 'Character not found',
-  GUILD_NOT_FOUND: 'Guild not found',
+  INVALID_API_KEY: 'Invalid NEXON API key provided for MapleStory SEA',
+  RATE_LIMIT_EXCEEDED: 'MapleStory SEA API rate limit exceeded. Please try again later',
+  CHARACTER_NOT_FOUND: 'Character not found in MapleStory SEA servers',
+  GUILD_NOT_FOUND: 'Guild not found in MapleStory SEA servers',
   INVALID_DATE_FORMAT: 'Invalid date format. Use YYYY-MM-DD',
-  NETWORK_ERROR: 'Network error occurred',
-  TIMEOUT_ERROR: 'Request timeout',
-  UNKNOWN_ERROR: 'Unknown error occurred',
+  NETWORK_ERROR: 'Network error occurred while connecting to MapleStory SEA API',
+  TIMEOUT_ERROR: 'Request timeout while connecting to MapleStory SEA API',
+  UNKNOWN_ERROR: 'Unknown error occurred with MapleStory SEA API',
+  SEA_FEATURE_UNSUPPORTED: 'This feature is not supported by MapleStory SEA API',
+  SEA_WORLD_INVALID: 'Invalid world name. MapleStory SEA supports: Aquila, Bootes, Cassiopeia, Delphinus',
+  SEA_CHARACTER_NAME_INVALID: 'Invalid character name format for MapleStory SEA. Only English letters and numbers are allowed',
 } as const;
 
-// MapleStory worlds
-export const WORLDS = [
-  '스카니아',
-  '베라',
-  '루나',
-  '제니스',
-  '크로아',
-  '유니온',
-  '엘리시움',
-  '이노시스',
-  '레드',
-  '오로라',
-  '아케인',
-  '노바',
-  '리부트',
-  '리부트2',
-] as const;
+// MapleStory SEA worlds
+export const WORLDS = ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'] as const;
 
-// MapleStory job classes
+// MapleStory SEA job classes
 export const JOB_CLASSES = [
-  '초보자',
-  '전사',
-  '마법사',
-  '궁수',
-  '도적',
-  '해적',
-  '메이플스토리M',
-  '데몬',
-  '배틀메이지',
-  '와일드헌터',
-  '메카닉',
-  '데몬어벤져',
-  '제논',
-  '미하일',
-  '카이저',
-  '카데나',
-  '엔젤릭버스터',
-  '초월자',
-  '은월',
-  '아델',
-  '일리움',
-  '아크',
-  '라라',
-  '호영',
-  '카인',
-  '칼리',
+  'Beginner',
+  'Warrior',
+  'Magician',
+  'Archer',
+  'Thief',
+  'Pirate',
+  'Hero',
+  'Paladin',
+  'Dark Knight',
+  'Arch Mage (Fire, Poison)',
+  'Arch Mage (Ice, Lightning)',
+  'Bishop',
+  'Bowmaster',
+  'Marksman',
+  'Pathfinder',
+  'Night Lord',
+  'Shadower',
+  'Dual Blade',
+  'Buccaneer',
+  'Cannoneer',
+  'Striker',
+  'Aran',
+  'Evan',
+  'Luminous',
+  'Mercedes',
+  'Phantom',
+  'Shade',
+  'Kaiser',
+  'Angelic Buster',
+  'Zero',
+  'Kinesis',
+  'Illium',
+  'Ark',
+  'Cadena',
+  'Kain',
+  'Adele',
+  'Lara',
+  'Hoyoung',
+  'Khali',
 ] as const;
 
-// Rate limiting configuration
+// Rate limiting configuration (optimized for SEA API stability)
 export const RATE_LIMIT = {
-  REQUESTS_PER_MINUTE: 500,
-  REQUESTS_PER_SECOND: 10,
-  BURST_LIMIT: 20,
+  REQUESTS_PER_MINUTE: 500, // Conservative daily limit
+  REQUESTS_PER_SECOND: 8, // Conservative for SEA API stability
+  BURST_LIMIT: 12, // Lower burst limit to prevent API stress
+  RETRY_DELAY_BASE: 1500, // Slightly higher base delay for SEA API
+  MAX_RETRY_DELAY: 45000, // Higher max delay for better error recovery
+  QUEUE_TIMEOUT: 30000, // Maximum time to wait in queue
+  CIRCUIT_BREAKER_THRESHOLD: 10, // Number of failures before circuit break
+  CIRCUIT_BREAKER_TIMEOUT: 60000, // 1 minute circuit breaker timeout
 } as const;
 
-// Date format patterns
+// Date format patterns (updated for SEA region)
 export const DATE_FORMATS = {
   API_DATE: 'YYYY-MM-DD',
-  DISPLAY_DATE: 'YYYY년 MM월 DD일',
+  DISPLAY_DATE: 'DD/MM/YYYY', // SEA standard format
   ISO_DATE: 'YYYY-MM-DDTHH:mm:ss.sssZ',
+} as const;
+
+// Cache TTL configurations (optimized for SEA API performance)
+export const CACHE_TTL = {
+  CHARACTER_OCID: 7200000, // 2 hours - OCIDs very rarely change
+  CHARACTER_BASIC: 1800000, // 30 minutes - basic info updates moderately
+  CHARACTER_STATS: 900000, // 15 minutes - stats can change with equipment
+  CHARACTER_EQUIPMENT: 600000, // 10 minutes - equipment changes often during gameplay
+  CHARACTER_HYPER_STAT: 1800000, // 30 minutes - hyper stats change less frequently
+  CHARACTER_ABILITY: 1800000, // 30 minutes - abilities don't change often
+  UNION_INFO: 1800000, // 30 minutes - union info updates moderately
+  UNION_RAIDER: 1800000, // 30 minutes - raider board setup is semi-permanent
+  UNION_ARTIFACT: 3600000, // 1 hour - artifact levels change slowly
+  GUILD_INFO: 3600000, // 1 hour - guild info is relatively stable
+  GUILD_BASIC: 3600000, // 1 hour - guild basic info rarely changes
+  RANKINGS: 1800000, // 30 minutes - rankings update regularly but not rapidly
+  RANKING_SEARCH: 900000, // 15 minutes - specific ranking searches can be more dynamic
+  API_HEALTH: 300000, // 5 minutes - API health can change quickly
+  ERROR_CACHE: 60000, // 1 minute - cache errors briefly to avoid spam
 } as const;
 
 // Pagination defaults

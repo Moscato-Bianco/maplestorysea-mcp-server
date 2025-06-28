@@ -1,0 +1,34 @@
+# Development Dockerfile for MapleStory SEA MCP Server
+FROM node:18-alpine
+
+# Install development dependencies
+RUN apk add --no-cache git
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig.json ./
+
+# Install all dependencies (including dev dependencies)
+RUN npm install
+
+# Create non-root user
+RUN addgroup -g 1001 -S mcp && \
+    adduser -S mcp -u 1001
+
+# Set ownership
+RUN chown -R mcp:mcp /app
+
+# Switch to non-root user
+USER mcp
+
+# Expose ports
+EXPOSE 3000 9229
+
+# Environment variables for development
+ENV NODE_ENV=development
+ENV LOG_LEVEL=debug
+
+# Default command (can be overridden in docker-compose)
+CMD ["npm", "run", "dev"]

@@ -1,6 +1,6 @@
 /**
  * Union Information Tools for MCP Maple
- * Provides MCP tools for retrieving MapleStory union data and rankings
+ * Provides MCP tools for retrieving MapleStory SEA union data and rankings
  */
 
 import { JSONSchema7 } from 'json-schema';
@@ -12,7 +12,7 @@ import { EnhancedBaseTool, ToolContext, ToolResult, ToolCategory } from './base-
 export class GetUnionInfoTool extends EnhancedBaseTool {
   public readonly name = 'get_union_info';
   public readonly description =
-    'Retrieve union information for a MapleStory character including level, grade, and artifact details';
+    'Retrieve union information for a MapleStory SEA character including level, grade, and artifact details';
 
   public readonly inputSchema: JSONSchema7 = {
     type: 'object',
@@ -22,7 +22,7 @@ export class GetUnionInfoTool extends EnhancedBaseTool {
         description: 'The name of the character to look up union info for',
         minLength: 1,
         maxLength: 12,
-        pattern: '^[a-zA-Z0-9가-힣]+$',
+        pattern: '^[a-zA-Z0-9]+$',
       },
       date: {
         type: 'string',
@@ -40,11 +40,11 @@ export class GetUnionInfoTool extends EnhancedBaseTool {
     examples: [
       {
         description: 'Get union info for character',
-        arguments: { characterName: '스카니아용사' },
+        arguments: { characterName: 'AquilaHero' },
       },
       {
         description: 'Get union info for specific date',
-        arguments: { characterName: '스카니아용사', date: '2024-01-15' },
+        arguments: { characterName: 'AquilaHero', date: '2024-01-15' },
       },
     ],
   };
@@ -127,7 +127,7 @@ export class GetUnionRaiderTool extends EnhancedBaseTool {
         description: 'The name of the character to look up union raider for',
         minLength: 1,
         maxLength: 12,
-        pattern: '^[a-zA-Z0-9가-힣]+$',
+        pattern: '^[a-zA-Z0-9]+$',
       },
       date: {
         type: 'string',
@@ -145,11 +145,11 @@ export class GetUnionRaiderTool extends EnhancedBaseTool {
     examples: [
       {
         description: 'Get union raider info for character',
-        arguments: { characterName: '스카니아용사' },
+        arguments: { characterName: 'AquilaHero' },
       },
       {
         description: 'Get union raider for specific date',
-        arguments: { characterName: '스카니아용사', date: '2024-01-15' },
+        arguments: { characterName: 'AquilaHero', date: '2024-01-15' },
       },
     ],
   };
@@ -253,29 +253,14 @@ export class GetUnionRankingTool extends EnhancedBaseTool {
       worldName: {
         type: 'string',
         description: 'World name to get rankings for (optional, gets all worlds if not specified)',
-        enum: [
-          '스카니아',
-          '베라',
-          '루나',
-          '제니스',
-          '크로아',
-          '유니온',
-          '엘리시움',
-          '이노시스',
-          '레드',
-          '오로라',
-          '아케인',
-          '노바',
-          '리부트',
-          '리부트2',
-        ],
+        enum: ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'],
       },
       characterName: {
         type: 'string',
         description: 'Specific character name to search for in rankings (optional)',
         minLength: 1,
         maxLength: 12,
-        pattern: '^[a-zA-Z0-9가-힣]+$',
+        pattern: '^[a-zA-Z0-9]+$',
       },
       page: {
         type: 'integer',
@@ -303,15 +288,15 @@ export class GetUnionRankingTool extends EnhancedBaseTool {
       },
       {
         description: 'Get union rankings for specific world',
-        arguments: { worldName: '스카니아' },
+        arguments: { worldName: 'Aquila' },
       },
       {
         description: 'Get union rankings for specific character',
-        arguments: { characterName: '스카니아용사' },
+        arguments: { characterName: 'AquilaHero' },
       },
       {
         description: 'Get page 2 of union rankings',
-        arguments: { worldName: '스카니아', page: 2 },
+        arguments: { worldName: 'Aquila', page: 2 },
       },
     ],
   };

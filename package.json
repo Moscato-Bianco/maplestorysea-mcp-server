@@ -10,12 +10,20 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:integration": "jest --testPathPatterns=integration",
+    "test:unit": "jest --testPathPatterns=unit",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write src/**/*.ts",
     "typecheck": "tsc --noEmit",
     "prepare": "npm run build",
-    "mcp": "node dist/index.js"
+    "mcp": "node dist/index.js",
+    "benchmark": "./benchmarks/run-benchmarks.sh",
+    "benchmark:perf": "npx ts-node benchmarks/performance-benchmark.ts",
+    "benchmark:load": "npx ts-node benchmarks/load-test.ts"
   },
   "keywords": [
     "maplestory",
@@ -56,6 +64,8 @@
     "winston": "^3.14.0"
   },
   "devDependencies": {
+    "@jest/globals": "^30.0.3",
+    "@types/jest": "^30.0.0",
     "@types/json-schema": "^7.0.15",
     "@types/node": "^20.19.1",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
@@ -63,8 +73,10 @@
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.0",
+    "jest": "^30.0.3",
     "json-schema": "^0.4.0",
     "prettier": "^3.2.0",
+    "ts-jest": "^29.4.0",
     "typescript": "^5.4.0"
   },
   "engines": {

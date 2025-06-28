@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  maplestory-sea-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: maplestory-sea-mcp-server
+    restart: unless-stopped
+    ports:
+      # Optional: expose for health check monitoring
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - NEXON_API_KEY=${NEXON_API_KEY}
+    volumes:
+      # Optional: mount logs directory for persistent logging
+      - ./logs:/app/logs
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Optional: Redis for caching (if implementing distributed caching)
+  redis:
+    image: redis:7-alpine
+    container_name: maplestory-mcp-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - mcp-network
+    command: redis-server --appendonly yes
+
+networks:
+  mcp-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local

@@ -1,6 +1,6 @@
 /**
- * TypeScript interfaces for NEXON MapleStory Open API
- * Based on official NEXON Open API documentation
+ * TypeScript interfaces for NEXON MapleStory SEA Open API
+ * Based on official NEXON Open API documentation for SEA region
  */
 
 // Base response structure
@@ -16,6 +16,11 @@ export interface ApiError {
     name: string;
     message: string;
   };
+}
+
+// Character ID lookup
+export interface CharacterOcid {
+  ocid: string;
 }
 
 // Character related types
@@ -345,6 +350,11 @@ export interface UnionRaider {
       }>;
     }>;
   };
+}
+
+// Guild ID lookup
+export interface GuildId {
+  oguild_id: string;
 }
 
 // Guild related types

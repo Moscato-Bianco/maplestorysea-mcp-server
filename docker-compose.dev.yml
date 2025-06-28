@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  maplestory-sea-mcp-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: maplestory-sea-mcp-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Node.js debugging port
+    environment:
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+      - NEXON_API_KEY=${NEXON_API_KEY}
+    volumes:
+      # Mount source code for hot reloading
+      - ./src:/app/src
+      - ./package*.json:/app/
+      - ./tsconfig.json:/app/tsconfig.json
+      # Mount node_modules as named volume for performance
+      - node_modules:/app/node_modules
+    networks:
+      - mcp-dev-network
+    command: npm run dev
+    stdin_open: true
+    tty: true
+
+  # Development Redis for testing cache functionality
+  redis-dev:
+    image: redis:7-alpine
+    container_name: maplestory-mcp-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - mcp-dev-network
+    command: redis-server --appendonly yes
+
+networks:
+  mcp-dev-network:
+    driver: bridge
+
+volumes:
+  node_modules:

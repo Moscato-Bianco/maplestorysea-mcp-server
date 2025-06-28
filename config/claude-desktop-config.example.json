@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "maplestory-sea": {
+      "command": "npx",
+      "args": ["-y", "maplestory-mcp-server"],
+      "env": {
+        "NEXON_API_KEY": "your_nexon_api_key_here"
+      }
+    }
+  },
+  "mcpServerOptions": {
+    "maplestory-sea": {
+      "timeout": 30000,
+      "retries": 3,
+      "debug": false
+    }
+  }
+}

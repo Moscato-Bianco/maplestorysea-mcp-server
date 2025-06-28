@@ -24,8 +24,8 @@ export function validateGuildName(guildName: string): void {
     throw new Error('Guild name must be at least 2 characters');
   }
 
-  // Check for valid characters (Korean, English, numbers, some special chars)
-  const validCharPattern = /^[가-힣a-zA-Z0-9\s\-_.]+$/;
+  // Check for valid characters (English letters, numbers, some special chars for SEA)
+  const validCharPattern = /^[a-zA-Z0-9\s\-_.]+$/;
   if (!validCharPattern.test(trimmedName)) {
     throw new Error('Guild name contains invalid characters');
   }
@@ -200,11 +200,11 @@ export function validateGuildId(guildId: string): void {
  */
 export const GuildCacheKeys = {
   guildId: (guildName: string, worldName: string): string =>
-    `guild_id:${worldName}:${guildName.toLowerCase()}`,
+    `sea_guild_id:${worldName}:${guildName.trim().toLowerCase().replace(/\s+/g, '')}`,
 
   guildBasic: (guildId: string, date?: string): string =>
-    `guild_basic:${guildId}:${date || 'latest'}`,
+    `sea_guild_basic:${guildId}:${date || 'latest'}`,
 
   guildSearch: (searchTerm: string, worldName: string): string =>
-    `guild_search:${worldName}:${searchTerm.toLowerCase()}`,
+    `sea_guild_search:${worldName}:${searchTerm.trim().toLowerCase().replace(/\s+/g, '')}`,
 };

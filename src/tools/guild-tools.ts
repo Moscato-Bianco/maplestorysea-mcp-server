@@ -1,6 +1,6 @@
 /**
  * Guild Information Tools for MCP Maple
- * Provides MCP tools for retrieving MapleStory guild information
+ * Provides MCP tools for retrieving MapleStory SEA guild information
  */
 
 import { JSONSchema7 } from 'json-schema';
@@ -12,7 +12,7 @@ import { EnhancedBaseTool, ToolContext, ToolResult, ToolCategory } from './base-
 export class GetGuildInfoTool extends EnhancedBaseTool {
   public readonly name = 'get_guild_info';
   public readonly description =
-    'Retrieve basic information about a MapleStory guild including level, members, and skills';
+    'Retrieve basic information about a MapleStory SEA guild including level, members, and skills';
 
   public readonly inputSchema: JSONSchema7 = {
     type: 'object',
@@ -26,22 +26,7 @@ export class GetGuildInfoTool extends EnhancedBaseTool {
       worldName: {
         type: 'string',
         description: 'The world/server name where the guild exists',
-        enum: [
-          '스카니아',
-          '베라',
-          '루나',
-          '제니스',
-          '크로아',
-          '유니온',
-          '엘리시움',
-          '이노시스',
-          '레드',
-          '오로라',
-          '아케인',
-          '노바',
-          '리부트',
-          '리부트2',
-        ],
+        enum: ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'],
       },
       date: {
         type: 'string',
@@ -59,11 +44,11 @@ export class GetGuildInfoTool extends EnhancedBaseTool {
     examples: [
       {
         description: 'Get guild info',
-        arguments: { guildName: '길드명', worldName: '스카니아' },
+        arguments: { guildName: 'GuildName', worldName: 'Aquila' },
       },
       {
         description: 'Get guild info for specific date',
-        arguments: { guildName: '길드명', worldName: '스카니아', date: '2024-01-15' },
+        arguments: { guildName: 'GuildName', worldName: 'Aquila', date: '2024-01-15' },
       },
     ],
   };
@@ -176,22 +161,7 @@ export class SearchGuildsTool extends EnhancedBaseTool {
       worldName: {
         type: 'string',
         description: 'World/server to search in (optional)',
-        enum: [
-          '스카니아',
-          '베라',
-          '루나',
-          '제니스',
-          '크로아',
-          '유니온',
-          '엘리시움',
-          '이노시스',
-          '레드',
-          '오로라',
-          '아케인',
-          '노바',
-          '리부트',
-          '리부트2',
-        ],
+        enum: ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'],
       },
       maxResults: {
         type: 'number',
@@ -216,15 +186,15 @@ export class SearchGuildsTool extends EnhancedBaseTool {
     examples: [
       {
         description: 'Search for guilds by name',
-        arguments: { guildName: '길드' },
+        arguments: { guildName: 'Guild' },
       },
       {
         description: 'Search guilds in specific world',
-        arguments: { guildName: '길드', worldName: '스카니아' },
+        arguments: { guildName: 'Guild', worldName: 'Aquila' },
       },
       {
         description: 'Search with limited results',
-        arguments: { guildName: '길드', maxResults: 5 },
+        arguments: { guildName: 'Guild', maxResults: 5 },
       },
     ],
   };
@@ -300,22 +270,7 @@ export class GetGuildRankingTool extends EnhancedBaseTool {
         type: 'string',
         description:
           'World name to get guild rankings for (optional, gets all worlds if not specified)',
-        enum: [
-          '스카니아',
-          '베라',
-          '루나',
-          '제니스',
-          '크로아',
-          '유니온',
-          '엘리시움',
-          '이노시스',
-          '레드',
-          '오로라',
-          '아케인',
-          '노바',
-          '리부트',
-          '리부트2',
-        ],
+        enum: ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'],
       },
       guildName: {
         type: 'string',
@@ -349,15 +304,15 @@ export class GetGuildRankingTool extends EnhancedBaseTool {
       },
       {
         description: 'Get guild rankings for specific world',
-        arguments: { worldName: '스카니아' },
+        arguments: { worldName: 'Aquila' },
       },
       {
         description: 'Get guild rankings for specific guild',
-        arguments: { guildName: '길드명' },
+        arguments: { guildName: 'GuildName' },
       },
       {
         description: 'Get page 2 of guild rankings',
-        arguments: { worldName: '스카니아', page: 2 },
+        arguments: { worldName: 'Aquila', page: 2 },
       },
     ],
   };

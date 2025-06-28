@@ -95,6 +95,13 @@ export class MemoryCache {
   }
 
   /**
+   * Get cache size
+   */
+  size(): number {
+    return this.cache.size;
+  }
+
+  /**
    * Get cache statistics
    */
   getStats(): { size: number; maxSize: number; hitRate?: number } {
@@ -105,30 +112,39 @@ export class MemoryCache {
   }
 
   /**
-   * Generate a cache key for character OCID lookup
+   * Generate a cache key for character OCID lookup (SEA API optimized)
    */
   static generateOcidCacheKey(characterName: string): string {
-    return `ocid:${characterName.toLowerCase()}`;
+    // SEA API uses English character names only - normalize for consistent caching
+    const normalizedName = characterName.trim().toLowerCase().replace(/\s+/g, '');
+    return `sea_ocid:${normalizedName}`;
   }
 
   /**
-   * Generate a cache key for character basic info
+   * Generate a cache key for character basic info (SEA API optimized)
    */
   static generateCharacterBasicCacheKey(ocid: string, date?: string): string {
     const dateKey = date || 'latest';
-    return `character_basic:${ocid}:${dateKey}`;
+    return `sea_char_basic:${ocid}:${dateKey}`;
   }
 
   /**
-   * Generate a cache key for any API endpoint
+   * Generate a cache key for any SEA API endpoint
    */
   static generateApiCacheKey(endpoint: string, params: Record<string, any>): string {
     const sortedParams = Object.keys(params)
       .sort()
-      .map((key) => `${key}=${params[key]}`)
+      .map((key) => {
+        const value = params[key];
+        // Normalize character names for consistent caching
+        if (key.includes('character_name') && typeof value === 'string') {
+          return `${key}=${value.trim().toLowerCase().replace(/\s+/g, '')}`;
+        }
+        return `${key}=${value}`;
+      })
       .join('&');
 
-    return `api:${endpoint}:${sortedParams}`;
+    return `sea_api:${endpoint}:${sortedParams}`;
   }
 }
 

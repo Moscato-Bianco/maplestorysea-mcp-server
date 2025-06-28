@@ -1,6 +1,6 @@
 /**
  * Ranking Tools for MCP Maple
- * Provides MCP tools for retrieving various MapleStory rankings
+ * Provides MCP tools for retrieving various MapleStory SEA rankings
  */
 
 import { JSONSchema7 } from 'json-schema';
@@ -12,7 +12,7 @@ import { EnhancedBaseTool, ToolContext, ToolResult, ToolCategory } from './base-
 export class GetOverallRankingTool extends EnhancedBaseTool {
   public readonly name = 'get_overall_ranking';
   public readonly description =
-    'Retrieve overall level rankings for MapleStory characters with filtering options';
+    'Retrieve overall level rankings for MapleStory SEA characters with filtering options';
 
   public readonly inputSchema: JSONSchema7 = {
     type: 'object',
@@ -20,67 +20,45 @@ export class GetOverallRankingTool extends EnhancedBaseTool {
       worldName: {
         type: 'string',
         description: 'World name to get rankings for (optional)',
-        enum: [
-          '스카니아',
-          '베라',
-          '루나',
-          '제니스',
-          '크로아',
-          '유니온',
-          '엘리시움',
-          '이노시스',
-          '레드',
-          '오로라',
-          '아케인',
-          '노바',
-          '리부트',
-          '리부트2',
-        ],
-      },
-      worldType: {
-        type: 'string',
-        description: 'World type filter (optional)',
-        enum: ['일반', '리부트'],
+        enum: ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'],
       },
       className: {
         type: 'string',
         description: 'Character class filter (optional)',
         enum: [
-          '히어로',
-          '팔라딘',
-          '다크나이트',
-          '아크메이지(불,독)',
-          '아크메이지(썬,콜)',
-          '비숍',
-          '보우마스터',
-          '신궁',
-          '패스파인더',
-          '나이트로드',
-          '섀도어',
-          '듀얼블레이드',
-          '바이퍼',
-          '캐논슈터',
-          '스트라이커',
-          '은월',
-          '아란',
-          '에반',
-          '루미너스',
-          '메르세데스',
-          '팬텀',
-          '레인',
-          '미하일',
-          '카이저',
-          '엔젤릭버스터',
-          '제로',
-          '키네시스',
-          '일리움',
-          '아크',
-          '카데나',
-          '칼리',
-          '아델',
-          '카인',
-          '라라',
-          '호영',
+          'Hero',
+          'Paladin',
+          'Dark Knight',
+          'Arch Mage (Fire, Poison)',
+          'Arch Mage (Ice, Lightning)',
+          'Bishop',
+          'Bowmaster',
+          'Marksman',
+          'Pathfinder',
+          'Night Lord',
+          'Shadower',
+          'Dual Blade',
+          'Buccaneer',
+          'Cannoneer',
+          'Striker',
+          'Aran',
+          'Evan',
+          'Luminous',
+          'Mercedes',
+          'Phantom',
+          'Shade',
+          'Kaiser',
+          'Angelic Buster',
+          'Zero',
+          'Kinesis',
+          'Illium',
+          'Ark',
+          'Cadena',
+          'Kain',
+          'Adele',
+          'Lara',
+          'Hoyoung',
+          'Khali',
         ],
       },
       characterName: {
@@ -88,7 +66,7 @@ export class GetOverallRankingTool extends EnhancedBaseTool {
         description: 'Specific character name to search for (optional)',
         minLength: 1,
         maxLength: 12,
-        pattern: '^[a-zA-Z0-9가-힣]+$',
+        pattern: '^[a-zA-Z0-9]+$',
       },
       page: {
         type: 'integer',
@@ -116,15 +94,15 @@ export class GetOverallRankingTool extends EnhancedBaseTool {
       },
       {
         description: 'Get rankings for specific world',
-        arguments: { worldName: '스카니아' },
+        arguments: { worldName: 'Aquila' },
       },
       {
         description: 'Get rankings for specific class',
-        arguments: { className: '아크메이지(썬,콜)' },
+        arguments: { className: 'Arch Mage (Ice, Lightning)' },
       },
       {
-        description: 'Get rankings for reboot worlds only',
-        arguments: { worldType: '리부트' },
+        description: 'Get rankings with pagination',
+        arguments: { page: 2 },
       },
     ],
   };
@@ -134,7 +112,6 @@ export class GetOverallRankingTool extends EnhancedBaseTool {
     context: ToolContext
   ): Promise<ToolResult> {
     const worldName = this.getOptionalString(args, 'worldName');
-    const worldType = this.getOptionalString(args, 'worldType');
     const className = this.getOptionalString(args, 'className');
     const characterName = this.getOptionalString(args, 'characterName');
     const page = this.getOptionalNumber(args, 'page', 1);
@@ -155,7 +132,6 @@ export class GetOverallRankingTool extends EnhancedBaseTool {
       // Get overall rankings
       context.logger.info('Fetching overall rankings', {
         worldName: worldName || undefined,
-        worldType: worldType || undefined,
         className: className || undefined,
         characterName: characterName || undefined,
         page,
@@ -163,7 +139,7 @@ export class GetOverallRankingTool extends EnhancedBaseTool {
 
       const rankings = await context.nexonClient.getOverallRanking(
         worldName,
-        worldType,
+        undefined,
         className,
         ocid,
         page,
@@ -201,7 +177,6 @@ export class GetOverallRankingTool extends EnhancedBaseTool {
           pageSize: rankingData.length,
           filters: {
             worldName: worldName || 'all',
-            worldType: worldType || 'all',
             className: className || 'all',
             searchCharacter: characterName || undefined,
           },

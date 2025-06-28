@@ -174,7 +174,7 @@ export const RankingCacheKeys = {
     page?: number,
     date?: string
   ): string => {
-    const parts = ['ranking_overall'];
+    const parts = ['sea_ranking_overall'];
     if (worldName) parts.push(`world:${worldName}`);
     if (worldType) parts.push(`type:${worldType}`);
     if (className) parts.push(`class:${className}`);
@@ -184,7 +184,7 @@ export const RankingCacheKeys = {
   },
 
   union: (worldName?: string, page?: number, date?: string): string => {
-    const parts = ['ranking_union'];
+    const parts = ['sea_ranking_union'];
     if (worldName) parts.push(`world:${worldName}`);
     if (page) parts.push(`page:${page}`);
     if (date) parts.push(`date:${date}`);
@@ -192,21 +192,23 @@ export const RankingCacheKeys = {
   },
 
   guild: (worldName: string, rankingType: number, page?: number, date?: string): string => {
-    const parts = ['ranking_guild', `world:${worldName}`, `type:${rankingType}`];
+    const parts = ['sea_ranking_guild', `world:${worldName}`, `type:${rankingType}`];
     if (page) parts.push(`page:${page}`);
     if (date) parts.push(`date:${date}`);
     return parts.join(':');
   },
 
   characterPosition: (characterName: string, worldName?: string, className?: string): string => {
-    const parts = ['character_position', `name:${characterName.toLowerCase()}`];
+    const normalizedName = characterName.trim().toLowerCase().replace(/\s+/g, '');
+    const parts = ['sea_char_position', `name:${normalizedName}`];
     if (worldName) parts.push(`world:${worldName}`);
     if (className) parts.push(`class:${className}`);
     return parts.join(':');
   },
 
   guildPosition: (guildName: string, worldName: string, rankingType: number): string => {
-    return `guild_position:${worldName}:${rankingType}:${guildName.toLowerCase()}`;
+    const normalizedName = guildName.trim().toLowerCase().replace(/\s+/g, '');
+    return `sea_guild_position:${worldName}:${rankingType}:${normalizedName}`;
   },
 };
 

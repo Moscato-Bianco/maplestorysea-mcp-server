@@ -13,17 +13,6 @@ export enum ServerStatus {
   UNKNOWN = 'unknown',
 }
 
-/**
- * Notice types
- */
-export enum NoticeType {
-  ANNOUNCEMENT = 'announcement',
-  MAINTENANCE = 'maintenance',
-  EVENT = 'event',
-  UPDATE = 'update',
-  CASHSHOP = 'cashshop',
-  GENERAL = 'general',
-}
 
 /**
  * SEA timezone offset (UTC+8)
@@ -54,70 +43,18 @@ export function formatSEADate(date: Date | string): string {
   });
 }
 
-/**
- * Parse notice type from title or content
- */
-export function parseNoticeType(title: string, content?: string): NoticeType {
-  const text = `${title} ${content || ''}`.toLowerCase();
-
-  if (text.includes('점검') || text.includes('maintenance')) {
-    return NoticeType.MAINTENANCE;
-  }
-
-  if (text.includes('이벤트') || text.includes('event')) {
-    return NoticeType.EVENT;
-  }
-
-  if (text.includes('업데이트') || text.includes('update') || text.includes('패치')) {
-    return NoticeType.UPDATE;
-  }
-
-  if (text.includes('캐시샵') || text.includes('cash') || text.includes('아이템')) {
-    return NoticeType.CASHSHOP;
-  }
-
-  if (text.includes('공지') || text.includes('announcement')) {
-    return NoticeType.ANNOUNCEMENT;
-  }
-
-  return NoticeType.GENERAL;
-}
 
 /**
- * Extract maintenance time from notice content
+ * Extract maintenance time from content (SEA API does not support notices)
+ * This function is kept for backward compatibility but always returns null
  */
 export function extractMaintenanceTime(content: string): {
   startTime?: Date;
   endTime?: Date;
   duration?: string;
 } | null {
-  if (!content) return null;
-
-  // Common maintenance time patterns
-  const patterns = [
-    // 2024년 12월 28일 오전 10:00 ~ 오후 2:00
-    /(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일\s*(오전|오후)\s*(\d{1,2}):(\d{2})\s*~\s*(오전|오후)\s*(\d{1,2}):(\d{2})/,
-    // 12/28 10:00 ~ 14:00
-    /(\d{1,2})\/(\d{1,2})\s*(\d{1,2}):(\d{2})\s*~\s*(\d{1,2}):(\d{2})/,
-    // 점검 시간: 4시간
-    /점검\s*시간[:\s]*(\d+)\s*시간/,
-  ];
-
-  for (const pattern of patterns) {
-    const match = content.match(pattern);
-    if (match) {
-      try {
-        // Parse and return maintenance time info
-        // This is a simplified implementation
-        return {
-          duration: match[0],
-        };
-      } catch (error) {
-        continue;
-      }
-    }
-  }
-
+  // SEA API does not support maintenance notices
+  // Always return null for SEA compatibility
   return null;
 }
 
@@ -129,7 +66,7 @@ export function isMaintenanceTime(): boolean {
   const hour = now.getHours();
   const dayOfWeek = now.getDay();
 
-  // Common maintenance windows for Korean MMOs
+  // Common maintenance windows for SEA region MMOs
   // Wednesday early morning (01:00-06:00)
   if (dayOfWeek === 3 && hour >= 1 && hour <= 6) {
     return true;
@@ -151,15 +88,8 @@ export function determineServerStatus(
   maintenanceNotices: any[],
   errorRate: number = 0
 ): ServerStatus {
-  // Check for active maintenance notices
-  if (maintenanceNotices.length > 0) {
-    for (const notice of maintenanceNotices) {
-      const maintenanceInfo = extractMaintenanceTime(notice.notice_contents || '');
-      if (maintenanceInfo) {
-        return ServerStatus.MAINTENANCE;
-      }
-    }
-  }
+  // SEA API does not support maintenance notices
+  // Skip notice checking for SEA compatibility
 
   // Check if it's typical maintenance time
   if (isMaintenanceTime()) {
@@ -204,7 +134,8 @@ export function estimateWorldPopulation(rankingData: any): 'high' | 'medium' | '
 }
 
 /**
- * Format notice content for display
+ * Format content for display (SEA API does not support notices)
+ * This function is kept for backward compatibility
  */
 export function formatNoticeContent(content: string, maxLength: number = 200): string {
   if (!content) return '';
@@ -229,7 +160,7 @@ export function formatNoticeContent(content: string, maxLength: number = 200): s
 export const ServerCacheKeys = {
   serverStatus: (worldName?: string): string => `server_status:${worldName || 'all'}`,
 
-  notices: (noticeType?: string): string => `notices:${noticeType || 'all'}`,
+  // notices: (noticeType?: string): string => `notices:${noticeType || 'all'}`, // Disabled for SEA API
 
   events: (): string => 'current_events',
 

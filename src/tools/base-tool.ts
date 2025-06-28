@@ -1,6 +1,6 @@
 /**
  * Base tool interface and abstract classes for MCP Maple tools
- * Provides common structure and functionality for all MapleStory API tools
+ * Provides common structure and functionality for all MapleStory SEA API tools
  */
 
 import { JSONSchema7 } from 'json-schema';

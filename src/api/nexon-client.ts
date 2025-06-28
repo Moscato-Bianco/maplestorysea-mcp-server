@@ -6,7 +6,18 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { createLogger, Logger } from 'winston';
 import {
+  defaultErrorRecovery,
+  sanitizeErrorForLogging,
+  createNexonApiError,
+  McpMapleError,
+  ErrorAggregator,
+  isRetryableError,
+  getRetryDelay,
+} from '../utils/errors';
+import { McpLogger, performanceMonitor } from '../utils/logger';
+import {
   ApiClientConfig,
+  CharacterOcid,
   CharacterBasic,
   CharacterStat,
   CharacterHyperStat,
@@ -15,6 +26,7 @@ import {
   ItemEquipment,
   UnionInfo,
   UnionRaider,
+  GuildId,
   GuildBasic,
   OverallRanking,
   UnionRanking,
@@ -28,6 +40,7 @@ import {
   HTTP_STATUS,
   ERROR_MESSAGES,
   RATE_LIMIT,
+  CACHE_TTL,
   WORLDS,
 } from './constants';
 import { MemoryCache, defaultCache } from '../utils/cache';
@@ -56,14 +69,9 @@ import {
 } from '../utils/guild-utils';
 import {
   ServerStatus,
-  NoticeType,
-  convertToSEATime,
   formatSEADate,
-  parseNoticeType,
-  extractMaintenanceTime,
   determineServerStatus,
   estimateWorldPopulation,
-  formatNoticeContent,
   ServerCacheKeys,
 } from '../utils/server-utils';
 import {
@@ -80,14 +88,17 @@ import {
 export class NexonApiClient {
   private client: AxiosInstance;
   private logger: Logger;
+  private mcpLogger: McpLogger;
   private apiKey: string;
   private requestQueue: Array<{ resolve: () => void; timestamp: number }> = [];
   private isProcessingQueue = false;
   private cache: MemoryCache;
+  private errorAggregator: ErrorAggregator;
 
   constructor(config: ApiClientConfig) {
     this.apiKey = config.apiKey;
     this.cache = config.cache || defaultCache;
+    this.errorAggregator = new ErrorAggregator();
 
     // Check if in MCP mode (no port specified)
     const isMcpMode = !process.env.MCP_PORT && !process.argv.includes('--port');
@@ -102,6 +113,9 @@ export class NexonApiClient {
       transports: isMcpMode ? [] : [new (require('winston').transports.Console)()],
     });
 
+    // Create enhanced MCP logger
+    this.mcpLogger = new McpLogger('nexon-api-client');
+
     // Create axios instance with default configuration
     this.client = axios.create({
       baseURL: config.baseURL || API_CONFIG.BASE_URL,
@@ -114,52 +128,116 @@ export class NexonApiClient {
     });
 
     this.setupInterceptors();
+
+    // Log client initialization
+    this.mcpLogger.info('NEXON API Client initialized', {
+      operation: 'client_initialization',
+      baseURL: config.baseURL || API_CONFIG.BASE_URL,
+      timeout: config.timeout || API_CONFIG.TIMEOUT,
+      cacheEnabled: !!this.cache,
+    });
   }
 
   private setupInterceptors(): void {
     // Request interceptor
     this.client.interceptors.request.use(
       (config) => {
-        this.logger.info('API Request', {
-          method: config.method?.toUpperCase(),
-          url: config.url,
-          params: config.params,
-        });
+        const endpoint = config.url || 'unknown';
+
+        // Enhanced API request logging
+        this.mcpLogger.logApiRequest(endpoint, config.params);
+
+        // Performance monitoring
+        const timer = performanceMonitor.startTimer(`api_request_${endpoint}`);
+        (config as any)._startTime = Date.now();
+        (config as any)._timer = timer;
+
         return config;
       },
       (error) => {
-        this.logger.error('Request Error', { error: error.message });
-        return Promise.reject(error);
+        const sanitizedError = sanitizeErrorForLogging(error);
+        this.mcpLogger.error('API Request failed during setup', {
+          operation: 'api_request_setup',
+          error: sanitizedError,
+        });
+        return Promise.reject(createNexonApiError(500, error.message));
       }
     );
 
     // Response interceptor
     this.client.interceptors.response.use(
       (response: AxiosResponse) => {
-        this.logger.info('API Response', {
-          status: response.status,
-          url: response.config.url,
-          dataSize: JSON.stringify(response.data).length,
-        });
+        const duration = Date.now() - ((response.config as any)._startTime || Date.now());
+        const endpoint = response.config.url || 'unknown';
+
+        // Complete performance timer
+        if ((response.config as any)._timer) {
+          (response.config as any)._timer();
+        }
+
+        // Enhanced API response logging
+        this.mcpLogger.logApiResponse(endpoint, duration, true);
+
         return response;
       },
-      (error) => {
-        this.logger.error('Response Error', {
-          status: error.response?.status,
-          url: error.config?.url,
-          message: error.message,
-          data: error.response?.data,
-        });
+      async (error) => {
+        const duration = Date.now() - ((error.config as any)?._startTime || Date.now());
+        const endpoint = error.config?.url || 'unknown';
 
-        // Transform error to our standard format
-        const apiError: ApiError = {
-          error: {
-            name: this.getErrorName(error.response?.status),
-            message: this.getErrorMessage(error.response?.status, error.response?.data),
-          },
-        };
+        // Complete performance timer
+        if ((error.config as any)?._timer) {
+          (error.config as any)._timer();
+        }
 
-        return Promise.reject(apiError);
+        // Enhanced error logging
+        this.mcpLogger.logApiError(endpoint, error, duration);
+
+        // Log security events for authentication failures
+        if (error.response?.status === 401) {
+          this.mcpLogger.logSecurityEvent('api_authentication_failed', {
+            endpoint,
+            statusCode: error.response.status,
+          });
+        }
+
+        // Create standardized error
+        const mcpError = createNexonApiError(
+          error.response?.status || 500,
+          error.response?.data?.message || error.message,
+          endpoint,
+          error.config?.params
+        );
+
+        // Try error recovery
+        try {
+          const recoveryResult = await defaultErrorRecovery.attemptRecovery(mcpError, {
+            operation: () => this.client.request(error.config),
+            maxAttempts: 3,
+          });
+
+          this.mcpLogger.logRecoveryAttempt('retry', mcpError, 1, true, {
+            endpoint,
+            recoveryStrategy: 'retry',
+          });
+
+          return recoveryResult;
+        } catch (recoveryError) {
+          this.mcpLogger.logRecoveryAttempt('retry', mcpError, 1, false, {
+            endpoint,
+            recoveryStrategy: 'retry',
+            finalError: (recoveryError as Error).message,
+          });
+
+          // Transform to legacy format for backward compatibility
+          const apiError: ApiError = {
+            error: {
+              name: this.getErrorName(error.response?.status),
+              message: this.getErrorMessage(error.response?.status, error.response?.data, endpoint),
+            },
+          };
+
+          return Promise.reject(apiError);
+        }
       }
     );
   }
@@ -183,7 +261,7 @@ export class NexonApiClient {
     }
   }
 
-  private getErrorMessage(status?: number, data?: any): string {
+  private getErrorMessage(status?: number, data?: any, endpoint?: string): string {
     if (data?.message) {
       return data.message;
     }
@@ -194,7 +272,22 @@ export class NexonApiClient {
       case HTTP_STATUS.TOO_MANY_REQUESTS:
         return ERROR_MESSAGES.RATE_LIMIT_EXCEEDED;
       case HTTP_STATUS.NOT_FOUND:
-        return ERROR_MESSAGES.CHARACTER_NOT_FOUND;
+        // More specific error messages based on SEA API endpoint
+        if (endpoint?.includes('/guild/')) {
+          return ERROR_MESSAGES.GUILD_NOT_FOUND;
+        }
+        if (endpoint?.includes('/character/') || endpoint?.includes('/id')) {
+          return ERROR_MESSAGES.CHARACTER_NOT_FOUND;
+        }
+        return 'Resource not found in MapleStory SEA API';
+      case HTTP_STATUS.BAD_REQUEST:
+        return 'Invalid request parameters for MapleStory SEA API';
+      case HTTP_STATUS.FORBIDDEN:
+        return 'Access forbidden. Check your API key permissions for MapleStory SEA';
+      case HTTP_STATUS.INTERNAL_SERVER_ERROR:
+        return 'MapleStory SEA API server error. Please try again later';
+      case HTTP_STATUS.SERVICE_UNAVAILABLE:
+        return 'MapleStory SEA API is temporarily unavailable. Please try again later';
       default:
         return ERROR_MESSAGES.UNKNOWN_ERROR;
     }
@@ -205,6 +298,12 @@ export class NexonApiClient {
       const now = Date.now();
       this.requestQueue.push({ resolve, timestamp: now });
 
+      // Log rate limiting activity
+      this.mcpLogger.logRateLimit('applied', {
+        queueLength: this.requestQueue.length,
+        timestamp: now,
+      });
+
       if (!this.isProcessingQueue) {
         this.processQueue();
       }
@@ -213,12 +312,25 @@ export class NexonApiClient {
 
   private async processQueue(): Promise<void> {
     this.isProcessingQueue = true;
+    const startTime = Date.now();
+    let processedCount = 0;
+
+    this.mcpLogger.debug('Rate limit queue processing started', {
+      operation: 'queue_processing',
+      queueLength: this.requestQueue.length,
+    });
 
     while (this.requestQueue.length > 0) {
       const now = Date.now();
       const recentRequests = this.requestQueue.filter((req) => now - req.timestamp < 1000);
 
       if (recentRequests.length >= RATE_LIMIT.REQUESTS_PER_SECOND) {
+        this.mcpLogger.logRateLimit('exceeded', {
+          recentRequests: recentRequests.length,
+          limit: RATE_LIMIT.REQUESTS_PER_SECOND,
+          delayMs: 100,
+        });
+
         await new Promise((resolve) => setTimeout(resolve, 100));
         continue;
       }
@@ -226,8 +338,19 @@ export class NexonApiClient {
       const request = this.requestQueue.shift();
       if (request) {
         request.resolve();
+        processedCount++;
       }
     }
+
+    const duration = Date.now() - startTime;
+    this.mcpLogger.debug('Rate limit queue processing completed', {
+      operation: 'queue_processing',
+      duration,
+      processedCount,
+    });
+
+    // Record performance metric
+    performanceMonitor.recordMetric('rate_limit_queue_processing', duration);
 
     this.isProcessingQueue = false;
   }
@@ -237,37 +360,71 @@ export class NexonApiClient {
     maxRetries: number = API_CONFIG.RETRY_ATTEMPTS
   ): Promise<T> {
     let lastError: unknown;
+    const operationName = 'nexon_api_request';
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         await this.waitForRateLimit();
+
+        // Log rate limiting
+        if (this.requestQueue.length > 0) {
+          this.mcpLogger.logRateLimit('applied', {
+            queueLength: this.requestQueue.length,
+            attempt: attempt + 1,
+          });
+        }
+
         return await operation();
       } catch (error: unknown) {
         lastError = error;
+        const mcpError =
+          error instanceof McpMapleError
+            ? error
+            : new McpMapleError((error as any)?.message || 'Unknown error', 'API_REQUEST_ERROR');
 
         const apiError = error as ApiError;
+
+        // Enhanced retry logic with error recovery
         if (
           apiError?.error?.name === 'RATE_LIMITED' ||
-          apiError?.error?.name === 'SERVICE_UNAVAILABLE'
+          apiError?.error?.name === 'SERVICE_UNAVAILABLE' ||
+          isRetryableError(mcpError)
         ) {
           if (attempt < maxRetries) {
-            const delay = API_CONFIG.RETRY_DELAY * Math.pow(2, attempt);
-            this.logger.info(
-              `Rate limited, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1})`
-            );
+            const delay = getRetryDelay(attempt + 1, RATE_LIMIT.RETRY_DELAY_BASE);
+
+            this.mcpLogger.logRecoveryAttempt('retry', mcpError, attempt + 1, false, {
+              operation: operationName,
+              delay,
+              maxRetries,
+              errorType: apiError?.error?.name || mcpError.code,
+            });
+
+            // Handle rate limiting specifically
+            if (apiError?.error?.name === 'RATE_LIMITED') {
+              this.mcpLogger.logRateLimit('exceeded', {
+                attempt: attempt + 1,
+                retryDelay: delay,
+              });
+            }
+
             await new Promise((resolve) => setTimeout(resolve, delay));
             continue;
           }
         }
 
-        if (attempt < maxRetries && this.isRetryableError(error)) {
-          const delay = API_CONFIG.RETRY_DELAY * Math.pow(2, attempt);
-          this.logger.info(
-            `Request failed, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1})`
-          );
-          await new Promise((resolve) => setTimeout(resolve, delay));
-          continue;
-        }
+        // Log final failure
+        this.mcpLogger.logRecoveryAttempt('retry', mcpError, attempt + 1, false, {
+          operation: operationName,
+          finalAttempt: true,
+          maxRetries,
+        });
+
+        // Add to error aggregator for batch analysis
+        this.errorAggregator.addError(operationName, mcpError, {
+          attempts: attempt + 1,
+          maxRetries,
+        });
 
         throw error;
       }
@@ -279,6 +436,12 @@ export class NexonApiClient {
   private isRetryableError(error: unknown): boolean {
     const apiError = error as ApiError;
     const retryableErrors = ['RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'TIMEOUT_ERROR'];
+
+    // Also check using enhanced error utilities
+    if (error instanceof Error) {
+      return isRetryableError(error) || retryableErrors.includes(apiError?.error?.name || '');
+    }
+
     return retryableErrors.includes(apiError?.error?.name || '');
   }
 
@@ -290,21 +453,37 @@ export class NexonApiClient {
   }
 
   // Character API methods
-  async getCharacterOcid(characterName: string): Promise<{ ocid: string }> {
-    // Validate and sanitize input
-    const sanitizedName = sanitizeCharacterName(characterName);
-    validateCharacterName(sanitizedName);
-
-    // Check cache first
-    const cacheKey = MemoryCache.generateOcidCacheKey(sanitizedName);
-    const cachedResult = this.cache.get<{ ocid: string }>(cacheKey);
-
-    if (cachedResult) {
-      this.logger.info('OCID lookup cache hit', { characterName: sanitizedName });
-      return cachedResult;
-    }
+  async getCharacterOcid(characterName: string): Promise<CharacterOcid> {
+    const operationTimer = performanceMonitor.startTimer('get_character_ocid');
 
     try {
+      // Validate and sanitize input
+      const sanitizedName = sanitizeCharacterName(characterName);
+      validateCharacterName(sanitizedName);
+
+      this.mcpLogger.logCharacterOperation('ocid_lookup_started', sanitizedName, {
+        operation: 'get_character_ocid',
+      });
+
+      // Check cache first
+      const cacheKey = MemoryCache.generateOcidCacheKey(sanitizedName);
+      const cachedResult = this.cache.get<{ ocid: string }>(cacheKey);
+
+      if (cachedResult) {
+        this.mcpLogger.logCacheOperation('hit', cacheKey, {
+          characterName: sanitizedName,
+          operation: 'get_character_ocid',
+        });
+
+        operationTimer();
+        return cachedResult;
+      }
+
+      this.mcpLogger.logCacheOperation('miss', cacheKey, {
+        characterName: sanitizedName,
+        operation: 'get_character_ocid',
+      });
+
       const result = await this.request<{ ocid: string }>(ENDPOINTS.CHARACTER.OCID, {
         character_name: sanitizedName,
       });
@@ -313,19 +492,31 @@ export class NexonApiClient {
       validateOcid(result.ocid);
 
       // Cache for 1 hour (OCID rarely changes)
-      this.cache.set(cacheKey, result, 3600000);
+      this.cache.set(cacheKey, result, CACHE_TTL.CHARACTER_OCID);
 
-      this.logger.info('OCID lookup successful', {
+      this.mcpLogger.logCacheOperation('set', cacheKey, {
         characterName: sanitizedName,
         ocid: result.ocid,
+        ttl: 3600000,
       });
 
+      this.mcpLogger.logCharacterOperation('ocid_lookup_completed', sanitizedName, {
+        operation: 'get_character_ocid',
+        ocid: result.ocid,
+        cached: false,
+      });
+
+      operationTimer();
       return result;
     } catch (error) {
-      this.logger.error('OCID lookup failed', {
-        characterName: sanitizedName,
-        error,
+      const sanitizedError = sanitizeErrorForLogging(error);
+
+      this.mcpLogger.logCharacterOperation('ocid_lookup_failed', characterName, {
+        operation: 'get_character_ocid',
+        error: sanitizedError,
       });
+
+      operationTimer();
       throw error;
     }
   }
@@ -360,7 +551,7 @@ export class NexonApiClient {
       }
 
       // Cache for 30 minutes (character info changes less frequently)
-      this.cache.set(cacheKey, result, 1800000);
+      this.cache.set(cacheKey, result, CACHE_TTL.CHARACTER_BASIC);
 
       this.logger.info('Character basic info lookup successful', {
         ocid,
@@ -408,7 +599,7 @@ export class NexonApiClient {
       const result = await this.request<CharacterStat>(ENDPOINTS.CHARACTER.STAT, params);
 
       // Cache for 15 minutes (stats can change more frequently)
-      this.cache.set(cacheKey, result, 900000);
+      this.cache.set(cacheKey, result, CACHE_TTL.CHARACTER_STATS);
 
       this.logger.info('Character stat lookup successful', {
         ocid,
@@ -467,7 +658,7 @@ export class NexonApiClient {
       const result = await this.request<ItemEquipment>(ENDPOINTS.CHARACTER.ITEM_EQUIPMENT, params);
 
       // Cache for 20 minutes (equipment changes less frequently)
-      this.cache.set(cacheKey, result, 1200000);
+      this.cache.set(cacheKey, result, CACHE_TTL.CHARACTER_EQUIPMENT);
 
       this.logger.info('Character equipment lookup successful', {
         ocid,
@@ -514,7 +705,7 @@ export class NexonApiClient {
       const result = await this.request<any>(ENDPOINTS.CHARACTER.CASHITEM_EQUIPMENT, params);
 
       // Cache for 30 minutes (cash items change less frequently)
-      this.cache.set(cacheKey, result, 1800000);
+      this.cache.set(cacheKey, result, CACHE_TTL.CHARACTER_EQUIPMENT);
 
       this.logger.info('Character cash item lookup successful', {
         ocid,
@@ -560,7 +751,7 @@ export class NexonApiClient {
       const result = await this.request<any>(ENDPOINTS.CHARACTER.BEAUTY_EQUIPMENT, params);
 
       // Cache for 1 hour (beauty equipment rarely changes)
-      this.cache.set(cacheKey, result, 3600000);
+      this.cache.set(cacheKey, result, CACHE_TTL.CHARACTER_EQUIPMENT);
 
       this.logger.info('Character beauty equipment lookup successful', {
         ocid,
@@ -588,7 +779,7 @@ export class NexonApiClient {
   }
 
   // Guild API methods
-  async getGuildId(guildName: string, worldName: string): Promise<{ oguild_id: string }> {
+  async getGuildId(guildName: string, worldName: string): Promise<GuildId> {
     // Validate and sanitize inputs
     const sanitizedGuildName = sanitizeGuildName(guildName);
     const sanitizedWorldName = sanitizeWorldName(worldName);
@@ -618,7 +809,7 @@ export class NexonApiClient {
       validateGuildId(result.oguild_id);
 
       // Cache for 2 hours (guild IDs rarely change)
-      this.cache.set(cacheKey, result, 7200000);
+      this.cache.set(cacheKey, result, CACHE_TTL.UNION_RAIDER);
 
       this.logger.info('Guild ID lookup successful', {
         guildName: sanitizedGuildName,
@@ -662,7 +853,7 @@ export class NexonApiClient {
       const result = await this.request<GuildBasic>(ENDPOINTS.GUILD.BASIC, params);
 
       // Cache for 1 hour (guild info changes moderately)
-      this.cache.set(cacheKey, result, 3600000);
+      this.cache.set(cacheKey, result, CACHE_TTL.GUILD_BASIC);
 
       this.logger.info('Guild basic info lookup successful', {
         oguildId,
@@ -757,8 +948,8 @@ export class NexonApiClient {
         .sort((a, b) => b.matchScore - a.matchScore)
         .slice(0, limit);
 
-      // Cache for 30 minutes
-      this.cache.set(cacheKey, uniqueResults, 1800000);
+      // Cache guild search for 15 minutes
+      this.cache.set(cacheKey, uniqueResults, CACHE_TTL.RANKING_SEARCH);
 
       this.logger.info('Guild search completed', {
         searchTerm: sanitizedSearchTerm,
@@ -842,22 +1033,22 @@ export class NexonApiClient {
 
     // Level recommendations
     if (level < 10) {
-      recommendations.push('길드 레벨을 올려 더 많은 혜택을 받을 수 있습니다.');
+      recommendations.push('Level up the guild to receive more benefits and bonuses.');
     }
 
     // Member count recommendations
     if (memberCount < 50) {
-      recommendations.push('더 많은 멤버를 모집하여 길드 활동을 활성화할 수 있습니다.');
+      recommendations.push('Recruit more members to increase guild activity and engagement.');
     }
 
     // Ranking recommendations
     if (rankingPosition && rankingPosition > 100) {
-      recommendations.push('길드 랭킹 향상을 위해 멤버들의 활동을 늘려보세요.');
+      recommendations.push('Increase member activity to improve guild ranking position.');
     }
 
     // General recommendations
     if (recommendations.length === 0) {
-      recommendations.push('훌륭한 길드입니다! 현재 상태를 유지하세요.');
+      recommendations.push('Excellent guild! Keep up the current status.');
     }
 
     return recommendations;
@@ -904,7 +1095,7 @@ export class NexonApiClient {
       const result = await this.request<OverallRanking>(ENDPOINTS.RANKING.OVERALL, params);
 
       // Cache for 30 minutes (rankings update periodically)
-      this.cache.set(cacheKey, result, 1800000);
+      this.cache.set(cacheKey, result, CACHE_TTL.RANKINGS);
 
       this.logger.info('Overall ranking retrieved successfully', {
         worldName,
@@ -977,7 +1168,7 @@ export class NexonApiClient {
       const result = await this.request<GuildRanking>(ENDPOINTS.RANKING.GUILD, params);
 
       // Cache for 30 minutes
-      this.cache.set(cacheKey, result, 1800000);
+      this.cache.set(cacheKey, result, CACHE_TTL.RANKINGS);
 
       this.logger.info('Guild ranking retrieved successfully', {
         worldName,
@@ -1131,7 +1322,7 @@ export class NexonApiClient {
 
     // Level recommendations
     if (level < 200) {
-      recommendations.push('레벨업을 통해 더 강한 장비를 착용할 수 있습니다.');
+      recommendations.push('Level up to equip stronger gear and improve overall stats.');
     }
 
     // Equipment enhancement recommendations
@@ -1140,18 +1331,18 @@ export class NexonApiClient {
     );
     if (lowEnhancementItems.length > 0) {
       recommendations.push(
-        `${lowEnhancementItems.length}개의 장비 강화가 부족합니다. 스타포스와 잠재능력 개선을 고려해보세요.`
+        `${lowEnhancementItems.length} equipment pieces need enhancement. Consider improving starforce and potential options.`
       );
     }
 
     // Set effect recommendations
     if (equipmentAnalysis.setEffects.length === 0) {
-      recommendations.push('세트 장비를 착용하여 추가 능력치를 얻을 수 있습니다.');
+      recommendations.push('Equip set items to gain additional stat bonuses and effects.');
     }
 
     // Combat power recommendations
     if (equipmentAnalysis.totalCombatPower < 100000) {
-      recommendations.push('전투력 향상을 위해 장비 업그레이드를 고려해보세요.');
+      recommendations.push('Consider upgrading equipment to improve overall combat power.');
     }
 
     return recommendations;
@@ -1227,16 +1418,13 @@ export class NexonApiClient {
       let overallStatus = ServerStatus.ONLINE;
       let errorCount = 0;
 
-      // Check maintenance notices
-      const maintenanceNotices = await this.getNotices(NoticeType.MAINTENANCE).catch(() => []);
-
       for (const world of worlds) {
         try {
           // Test API availability by getting ranking data
           const ranking = await this.getOverallRanking(world, undefined, undefined, undefined, 1);
           const population = estimateWorldPopulation(ranking);
 
-          const worldStatus = determineServerStatus(true, maintenanceNotices, 0);
+          const worldStatus = determineServerStatus(true, [], 0);
 
           worldStatuses.push({
             worldName: world,
@@ -1250,7 +1438,7 @@ export class NexonApiClient {
           }
         } catch (error) {
           errorCount++;
-          const worldStatus = determineServerStatus(false, maintenanceNotices, 1);
+          const worldStatus = determineServerStatus(false, [], 1);
 
           worldStatuses.push({
             worldName: world,
@@ -1263,17 +1451,16 @@ export class NexonApiClient {
 
       // Determine overall status
       const errorRate = errorCount / worlds.length;
-      overallStatus = determineServerStatus(errorRate < 1, maintenanceNotices, errorRate);
+      overallStatus = determineServerStatus(errorRate < 1, [], errorRate);
 
       const result = {
         status: overallStatus,
         worlds: worldStatuses,
-        maintenance: maintenanceNotices.length > 0 ? maintenanceNotices[0] : undefined,
         timestamp: formatSEADate(new Date()),
       };
 
-      // Cache for 5 minutes
-      this.cache.set(cacheKey, result, 300000);
+      // Cache for 5 minutes - API health status
+      this.cache.set(cacheKey, result, CACHE_TTL.API_HEALTH);
 
       this.logger.info('Server status check completed', {
         worldName,
@@ -1291,197 +1478,6 @@ export class NexonApiClient {
         worlds: [],
         timestamp: formatSEADate(new Date()),
       };
-    }
-  }
-
-  /**
-   * Get game notices by type
-   */
-  async getNotices(noticeType?: NoticeType | string, limit: number = 10): Promise<any[]> {
-    const cacheKey = ServerCacheKeys.notices(noticeType);
-    const cachedResult = this.cache.get<any[]>(cacheKey);
-
-    if (cachedResult) {
-      this.logger.info('Notices cache hit', { noticeType });
-      return cachedResult.slice(0, limit);
-    }
-
-    try {
-      // Get notices from different endpoints based on type
-      let notices: any[] = [];
-
-      if (!noticeType || noticeType === NoticeType.GENERAL) {
-        const generalNotices = await this.request<any>(ENDPOINTS.NOTICE.LIST);
-        if (generalNotices.notice) {
-          notices = notices.concat(generalNotices.notice);
-        }
-      }
-
-      if (!noticeType || noticeType === NoticeType.EVENT) {
-        try {
-          const eventNotices = await this.request<any>(ENDPOINTS.NOTICE.EVENT);
-          if (eventNotices.notice) {
-            notices = notices.concat(eventNotices.notice);
-          }
-        } catch (error) {
-          this.logger.debug('Event notices not available', { error });
-        }
-      }
-
-      if (!noticeType || noticeType === NoticeType.CASHSHOP) {
-        try {
-          const cashNotices = await this.request<any>(ENDPOINTS.NOTICE.CASHSHOP);
-          if (cashNotices.notice) {
-            notices = notices.concat(cashNotices.notice);
-          }
-        } catch (error) {
-          this.logger.debug('Cash shop notices not available', { error });
-        }
-      }
-
-      // Process and enrich notices
-      const processedNotices = notices.map((notice) => ({
-        ...notice,
-        noticeType: parseNoticeType(notice.title || '', notice.contents),
-        formattedDate: formatSEADate(notice.date || new Date()),
-        formattedContent: formatNoticeContent(notice.contents || ''),
-        maintenanceInfo: notice.contents ? extractMaintenanceTime(notice.contents) : null,
-      }));
-
-      // Filter by type if specified
-      let filteredNotices = processedNotices;
-      if (noticeType && noticeType !== NoticeType.GENERAL) {
-        filteredNotices = processedNotices.filter((notice) => notice.noticeType === noticeType);
-      }
-
-      // Sort by date (newest first)
-      filteredNotices.sort(
-        (a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()
-      );
-
-      const result = filteredNotices.slice(0, limit);
-
-      // Cache for 10 minutes
-      this.cache.set(cacheKey, result, 600000);
-
-      this.logger.info('Notices retrieved successfully', {
-        noticeType,
-        totalCount: notices.length,
-        filteredCount: result.length,
-      });
-
-      return result;
-    } catch (error) {
-      this.logger.error('Failed to get notices', { noticeType, error });
-      return [];
-    }
-  }
-
-  /**
-   * Get current events and promotions
-   */
-  async getCurrentEvents(): Promise<any[]> {
-    const cacheKey = ServerCacheKeys.events();
-    const cachedResult = this.cache.get<any[]>(cacheKey);
-
-    if (cachedResult) {
-      this.logger.info('Current events cache hit');
-      return cachedResult;
-    }
-
-    try {
-      const eventNotices = await this.getNotices(NoticeType.EVENT, 20);
-
-      // Filter for active events (simplified logic)
-      const currentDate = convertToSEATime(new Date());
-      const activeEvents = eventNotices.filter((notice) => {
-        if (!notice.date) return true;
-
-        const noticeDate = new Date(notice.date);
-        const daysDiff = (currentDate.getTime() - noticeDate.getTime()) / (1000 * 60 * 60 * 24);
-
-        // Consider events from last 30 days as potentially active
-        return daysDiff <= 30;
-      });
-
-      // Cache for 30 minutes
-      this.cache.set(cacheKey, activeEvents, 1800000);
-
-      this.logger.info('Current events retrieved', { count: activeEvents.length });
-
-      return activeEvents;
-    } catch (error) {
-      this.logger.error('Failed to get current events', { error });
-      return [];
-    }
-  }
-
-  /**
-   * Get maintenance schedule
-   */
-  async getMaintenanceSchedule(): Promise<{
-    scheduled: any[];
-    ongoing: any[];
-    upcoming: any[];
-  }> {
-    const cacheKey = ServerCacheKeys.maintenance();
-    const cachedResult = this.cache.get<any>(cacheKey);
-
-    if (cachedResult) {
-      this.logger.info('Maintenance schedule cache hit');
-      return cachedResult;
-    }
-
-    try {
-      const maintenanceNotices = await this.getNotices(NoticeType.MAINTENANCE, 20);
-
-      const now = convertToSEATime(new Date());
-      const scheduled: any[] = [];
-      const ongoing: any[] = [];
-      const upcoming: any[] = [];
-
-      maintenanceNotices.forEach((notice) => {
-        const maintenanceInfo = extractMaintenanceTime(notice.contents || '');
-
-        if (maintenanceInfo) {
-          // Simplified categorization based on notice date
-          const noticeDate = new Date(notice.date || now);
-          const hoursDiff = (now.getTime() - noticeDate.getTime()) / (1000 * 60 * 60);
-
-          if (hoursDiff < 2) {
-            ongoing.push({
-              ...notice,
-              maintenanceInfo,
-            });
-          } else if (hoursDiff < 0) {
-            upcoming.push({
-              ...notice,
-              maintenanceInfo,
-            });
-          } else {
-            scheduled.push({
-              ...notice,
-              maintenanceInfo,
-            });
-          }
-        }
-      });
-
-      const result = { scheduled, ongoing, upcoming };
-
-      // Cache for 15 minutes
-      this.cache.set(cacheKey, result, 900000);
-
-      this.logger.info('Maintenance schedule retrieved', {
-        scheduled: scheduled.length,
-        ongoing: ongoing.length,
-        upcoming: upcoming.length,
-      });
-
-      return result;
-    } catch (error) {
-      this.logger.error('Failed to get maintenance schedule', { error });
-      return { scheduled: [], ongoing: [], upcoming: [] };
     }
   }
 
@@ -1540,8 +1536,8 @@ export class NexonApiClient {
             searchedPages: page,
           };
 
-          // Cache for 1 hour
-          this.cache.set(cacheKey, finalResult, 3600000);
+          // Cache character position search for 15 minutes
+          this.cache.set(cacheKey, finalResult, CACHE_TTL.RANKING_SEARCH);
 
           this.logger.info('Character position found', {
             characterName: sanitizedName,
@@ -1558,8 +1554,8 @@ export class NexonApiClient {
         searchedPages: maxPages,
       };
 
-      // Cache negative result for 30 minutes
-      this.cache.set(cacheKey, notFoundResult, 1800000);
+      // Cache negative result for 15 minutes
+      this.cache.set(cacheKey, notFoundResult, CACHE_TTL.RANKING_SEARCH);
 
       this.logger.info('Character position not found', {
         characterName: sanitizedName,
@@ -1625,8 +1621,8 @@ export class NexonApiClient {
             searchedPages: page,
           };
 
-          // Cache for 1 hour
-          this.cache.set(cacheKey, finalResult, 3600000);
+          // Cache guild position search for 15 minutes
+          this.cache.set(cacheKey, finalResult, CACHE_TTL.RANKING_SEARCH);
 
           this.logger.info('Guild position found', {
             guildName: sanitizedName,
@@ -1643,8 +1639,8 @@ export class NexonApiClient {
         searchedPages: maxPages,
       };
 
-      // Cache negative result for 30 minutes
-      this.cache.set(cacheKey, notFoundResult, 1800000);
+      // Cache negative result for 15 minutes
+      this.cache.set(cacheKey, notFoundResult, CACHE_TTL.RANKING_SEARCH);
 
       this.logger.info('Guild position not found', {
         guildName: sanitizedName,
@@ -1738,5 +1734,160 @@ export class NexonApiClient {
       });
       throw error;
     }
+  }
+
+  // Enhanced monitoring and diagnostics methods
+  getErrorSummary(): {
+    total: number;
+    byType: Record<string, number>;
+    byCode: Record<string, number>;
+  } {
+    return this.errorAggregator.getSummary();
+  }
+
+  clearErrorHistory(): void {
+    this.errorAggregator.clear();
+    this.mcpLogger.info('Error history cleared', {
+      operation: 'clear_error_history',
+    });
+  }
+
+  getPerformanceMetrics(): Record<
+    string,
+    { count: number; avgTime: number; minTime: number; maxTime: number; totalTime: number }
+  > {
+    return performanceMonitor.getMetrics();
+  }
+
+  logPerformanceSummary(): void {
+    performanceMonitor.logSummary();
+  }
+
+  async getClientHealth(): Promise<{
+    status: 'healthy' | 'degraded' | 'unhealthy';
+    errors: { total: number; byType: Record<string, number>; byCode: Record<string, number> };
+    performance: Record<string, any>;
+    cache: { size: number; hit_rate?: number };
+    uptime: number;
+  }> {
+    const errors = this.getErrorSummary();
+    const performance = this.getPerformanceMetrics();
+
+    // Determine health status based on error rate and performance
+    let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+
+    if (errors.total > 50) {
+      status = 'unhealthy';
+    } else if (errors.total > 10) {
+      status = 'degraded';
+    }
+
+    // Check for performance issues
+    const avgResponseTime = performance.nexon_api_request?.avgTime;
+    if (avgResponseTime && avgResponseTime > 5000) {
+      status = status === 'healthy' ? 'degraded' : 'unhealthy';
+    }
+
+    const health = {
+      status,
+      errors,
+      performance,
+      cache: {
+        size: this.cache.size(),
+      },
+      uptime: process.uptime(),
+    };
+
+    this.mcpLogger.logHealthCheck('nexon-api-client', status, health);
+
+    return health;
+  }
+
+  // Enhanced error handling utilities
+  async withErrorRecovery<T>(
+    operation: () => Promise<T>,
+    fallbackValue?: T,
+    maxAttempts: number = 3
+  ): Promise<T> {
+    try {
+      return await defaultErrorRecovery.attemptRecovery(new Error('Operation wrapper'), {
+        operation,
+        maxAttempts,
+        fallbackValue,
+      });
+    } catch (error) {
+      this.mcpLogger.logError(error instanceof Error ? error : new Error(String(error)), {
+        operation: 'error_recovery_wrapper',
+        maxAttempts,
+        hasFallback: fallbackValue !== undefined,
+      });
+
+      if (fallbackValue !== undefined) {
+        return fallbackValue;
+      }
+
+      throw error;
+    }
+  }
+
+  // Batch operations with error aggregation
+  async executeBatch<T>(
+    operations: Array<{ name: string; operation: () => Promise<T> }>,
+    continueOnError: boolean = true
+  ): Promise<{ results: T[]; errors: any[] }> {
+    const results: T[] = [];
+    const errors: any[] = [];
+
+    this.mcpLogger.info('Batch operation started', {
+      operation: 'batch_execution',
+      operationCount: operations.length,
+      continueOnError,
+    });
+
+    for (const { name, operation } of operations) {
+      try {
+        const result = await operation();
+        results.push(result);
+
+        this.mcpLogger.debug('Batch operation completed', {
+          operation: 'batch_item',
+          name,
+          success: true,
+        });
+      } catch (error) {
+        const mcpError =
+          error instanceof McpMapleError
+            ? error
+            : new McpMapleError(
+                (error as any)?.message || 'Batch operation failed',
+                'BATCH_OPERATION_ERROR',
+                undefined,
+                { operationName: name }
+              );
+
+        this.errorAggregator.addError(name, mcpError);
+        errors.push({ name, error: sanitizeErrorForLogging(mcpError) });
+
+        this.mcpLogger.debug('Batch operation failed', {
+          operation: 'batch_item',
+          name,
+          success: false,
+          error: sanitizeErrorForLogging(mcpError),
+        });
+
+        if (!continueOnError) {
+          break;
+        }
+      }
+    }
+
+    this.mcpLogger.info('Batch operation completed', {
+      operation: 'batch_execution',
+      totalOperations: operations.length,
+      successCount: results.length,
+      errorCount: errors.length,
+    });
+
+    return { results, errors };
   }
 }

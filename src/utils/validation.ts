@@ -3,6 +3,7 @@
  */
 
 import { WORLDS } from '../api/constants';
+import { SeaCharacterNameError, SeaWorldNotFoundError, ValidationError as McpValidationError } from './errors';
 
 export class ValidationError extends Error {
   constructor(message: string) {
@@ -33,18 +34,18 @@ export function validateCharacterName(characterName: string): void {
     throw new ValidationError('Character name must be at least 2 characters');
   }
 
-  // Check for valid characters (Korean, English, numbers)
-  const validCharPattern = /^[가-힣a-zA-Z0-9]+$/;
+  // Check for valid characters (English letters and numbers only for SEA)
+  const validCharPattern = /^[a-zA-Z0-9]+$/;
   if (!validCharPattern.test(trimmedName)) {
-    throw new ValidationError(
-      'Character name can only contain Korean characters, English letters, and numbers'
+    throw new SeaCharacterNameError(
+      trimmedName,
+      'Character name can only contain English letters and numbers'
     );
   }
 
   // Check for invalid character combinations
   const invalidPatterns = [
     /^\d+$/, // Only numbers
-    /^[a-zA-Z]*$/, // Only English (must have Korean or numbers)
   ];
 
   for (const pattern of invalidPatterns) {
@@ -65,7 +66,7 @@ export function validateWorldName(worldName: string): void {
   const trimmedWorld = worldName.trim();
 
   if (!WORLDS.includes(trimmedWorld as any)) {
-    throw new ValidationError(`Invalid world name. Valid worlds: ${WORLDS.join(', ')}`);
+    throw new SeaWorldNotFoundError(trimmedWorld);
   }
 }
 

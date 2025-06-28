@@ -1,6 +1,6 @@
 /**
  * Character Information Tools for MCP Maple
- * Provides MCP tools for retrieving MapleStory character data
+ * Provides MCP tools for retrieving MapleStory SEA character data
  */
 
 import { JSONSchema7 } from 'json-schema';
@@ -12,7 +12,7 @@ import { EnhancedBaseTool, ToolContext, ToolResult, ToolCategory } from './base-
 export class GetCharacterBasicInfoTool extends EnhancedBaseTool {
   public readonly name = 'get_character_basic_info';
   public readonly description =
-    'Retrieve basic information about a MapleStory character including level, job, world, and guild';
+    'Retrieve basic information about a MapleStory SEA character including level, job, world, and guild';
 
   public readonly inputSchema: JSONSchema7 = {
     type: 'object',
@@ -22,7 +22,7 @@ export class GetCharacterBasicInfoTool extends EnhancedBaseTool {
         description: 'The name of the character to look up',
         minLength: 1,
         maxLength: 12,
-        pattern: '^[a-zA-Z0-9가-힣]+$',
+        pattern: '^[a-zA-Z0-9]+$',
       },
       date: {
         type: 'string',
@@ -41,11 +41,11 @@ export class GetCharacterBasicInfoTool extends EnhancedBaseTool {
     examples: [
       {
         description: 'Get basic info for character',
-        arguments: { characterName: '스카니아용사' },
+        arguments: { characterName: 'AquilaHero' },
       },
       {
         description: 'Get basic info for specific date',
-        arguments: { characterName: '스카니아용사', date: '2024-01-15' },
+        arguments: { characterName: 'AquilaHero', date: '2024-01-15' },
       },
     ],
   };
@@ -120,7 +120,7 @@ export class GetCharacterBasicInfoTool extends EnhancedBaseTool {
 export class GetCharacterStatsTool extends EnhancedBaseTool {
   public readonly name = 'get_character_stats';
   public readonly description =
-    'Retrieve detailed statistics for a MapleStory character including damage, critical rate, and all combat stats';
+    'Retrieve detailed statistics for a MapleStory SEA character including damage, critical rate, and all combat stats';
 
   public readonly inputSchema: JSONSchema7 = {
     type: 'object',
@@ -130,7 +130,7 @@ export class GetCharacterStatsTool extends EnhancedBaseTool {
         description: 'The name of the character to look up',
         minLength: 1,
         maxLength: 12,
-        pattern: '^[a-zA-Z0-9가-힣]+$',
+        pattern: '^[a-zA-Z0-9]+$',
       },
       date: {
         type: 'string',
@@ -149,11 +149,11 @@ export class GetCharacterStatsTool extends EnhancedBaseTool {
     examples: [
       {
         description: 'Get detailed stats for character',
-        arguments: { characterName: '스카니아용사' },
+        arguments: { characterName: 'AquilaHero' },
       },
       {
         description: 'Get stats for specific date',
-        arguments: { characterName: '스카니아용사', date: '2024-01-15' },
+        arguments: { characterName: 'AquilaHero', date: '2024-01-15' },
       },
     ],
   };
@@ -271,7 +271,7 @@ export class GetCharacterStatsTool extends EnhancedBaseTool {
 export class GetCharacterEquipmentTool extends EnhancedBaseTool {
   public readonly name = 'get_character_equipment';
   public readonly description =
-    'Retrieve equipment information for a MapleStory character including all equipped items and their stats';
+    'Retrieve equipment information for a MapleStory SEA character including all equipped items and their stats';
 
   public readonly inputSchema: JSONSchema7 = {
     type: 'object',
@@ -281,7 +281,7 @@ export class GetCharacterEquipmentTool extends EnhancedBaseTool {
         description: 'The name of the character to look up',
         minLength: 1,
         maxLength: 12,
-        pattern: '^[a-zA-Z0-9가-힣]+$',
+        pattern: '^[a-zA-Z0-9]+$',
       },
       date: {
         type: 'string',
@@ -300,11 +300,11 @@ export class GetCharacterEquipmentTool extends EnhancedBaseTool {
     examples: [
       {
         description: 'Get equipment for character',
-        arguments: { characterName: '스카니아용사' },
+        arguments: { characterName: 'AquilaHero' },
       },
       {
         description: 'Get equipment for specific date',
-        arguments: { characterName: '스카니아용사', date: '2024-01-15' },
+        arguments: { characterName: 'AquilaHero', date: '2024-01-15' },
       },
     ],
   };
@@ -425,7 +425,7 @@ export class GetCharacterFullInfoTool extends EnhancedBaseTool {
         description: 'The name of the character to look up',
         minLength: 1,
         maxLength: 12,
-        pattern: '^[a-zA-Z0-9가-힣]+$',
+        pattern: '^[a-zA-Z0-9]+$',
       },
       date: {
         type: 'string',
@@ -449,15 +449,15 @@ export class GetCharacterFullInfoTool extends EnhancedBaseTool {
     examples: [
       {
         description: 'Get full character information',
-        arguments: { characterName: '스카니아용사' },
+        arguments: { characterName: 'AquilaHero' },
       },
       {
         description: 'Get full info without equipment',
-        arguments: { characterName: '스카니아용사', includeEquipment: false },
+        arguments: { characterName: 'AquilaHero', includeEquipment: false },
       },
       {
         description: 'Get full info for specific date',
-        arguments: { characterName: '스카니아용사', date: '2024-01-15' },
+        arguments: { characterName: 'AquilaHero', date: '2024-01-15' },
       },
     ],
   };
@@ -612,7 +612,7 @@ export class GetCharacterAnalysisTool extends EnhancedBaseTool {
         description: 'The name of the character to analyze',
         minLength: 1,
         maxLength: 12,
-        pattern: '^[a-zA-Z0-9가-힣]+$',
+        pattern: '^[a-zA-Z0-9]+$',
       },
       date: {
         type: 'string',
@@ -630,7 +630,7 @@ export class GetCharacterAnalysisTool extends EnhancedBaseTool {
     examples: [
       {
         description: 'Analyze character equipment and stats',
-        arguments: { characterName: '스카니아용사' },
+        arguments: { characterName: 'AquilaHero' },
       },
     ],
   };
@@ -692,27 +692,12 @@ export class FindCharacterRankingTool extends EnhancedBaseTool {
         description: 'The name of the character to find in rankings',
         minLength: 1,
         maxLength: 12,
-        pattern: '^[a-zA-Z0-9가-힣]+$',
+        pattern: '^[a-zA-Z0-9]+$',
       },
       worldName: {
         type: 'string',
         description: 'World/server name to search in (optional)',
-        enum: [
-          '스카니아',
-          '베라',
-          '루나',
-          '제니스',
-          '크로아',
-          '유니온',
-          '엘리시움',
-          '이노시스',
-          '레드',
-          '오로라',
-          '아케인',
-          '노바',
-          '리부트',
-          '리부트2',
-        ],
+        enum: ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'],
       },
       className: {
         type: 'string',
@@ -735,11 +720,11 @@ export class FindCharacterRankingTool extends EnhancedBaseTool {
     examples: [
       {
         description: 'Find character ranking position',
-        arguments: { characterName: '스카니아용사' },
+        arguments: { characterName: 'AquilaHero' },
       },
       {
         description: 'Find ranking in specific world',
-        arguments: { characterName: '스카니아용사', worldName: '스카니아' },
+        arguments: { characterName: 'AquilaHero', worldName: 'Aquila' },
       },
     ],
   };

@@ -1,0 +1,83 @@
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Production build
+dist
+
+# Development files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Testing
+coverage
+test
+*.test.ts
+*.spec.ts
+__tests__
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Documentation
+README.md
+docs/
+*.md
+
+# License
+LICENSE
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Cache directories
+.npm
+.yarn
+.cache
+
+# TypeScript
+*.tsbuildinfo
+
+# ESLint
+.eslintcache
+
+# Prettier
+.prettierignore
+
+# Jest
+jest.config.js
+
+# Other config files
+.editorconfig
+.browserslistrc
