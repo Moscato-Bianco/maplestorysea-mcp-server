@@ -2,137 +2,142 @@
   "master": {
     "tasks": [
       {
-        "id": 1,
-        "title": "Initialize TypeScript Project with Package Structure",
-        "description": "Set up the basic TypeScript project structure with all necessary configuration files, dependencies, and directory structure as specified in the PRD",
-        "details": "Create package.json with exact dependencies specified (@modelcontextprotocol/sdk, axios, commander, winston), set up tsconfig.json for TypeScript 5.0+, initialize Jest configuration with ts-jest preset, create directory structure (src/, tests/, docs/), configure ESLint and Prettier, set up bin configuration for CLI entry point, and initialize git repository with proper .gitignore",
-        "testStrategy": "Verify package.json structure matches PRD requirements, validate tsconfig.json compiles without errors, ensure jest.config.js runs test suite successfully, confirm directory structure matches specification",
+        "id": 11,
+        "title": "Setup Project Repository and Base Configuration",
+        "description": "Initialize the maplestory-mcp-server repository with proper TypeScript configuration, package.json setup, and development environment",
+        "details": "Create package.json with name 'maplestory-mcp-server', setup TypeScript configuration with strict mode, initialize Git repository, create basic directory structure (src/, dist/, tests/), setup ESLint and Prettier, configure Node.js engines, add MCP SDK dependency, setup build scripts and development workflow",
+        "testStrategy": "Verify package.json structure, test TypeScript compilation, validate linting rules, ensure proper git configuration and gitignore setup",
         "priority": "high",
         "dependencies": [],
         "status": "done",
         "subtasks": []
       },
       {
-        "id": 2,
-        "title": "Implement NEXON API Client with TypeScript Types",
-        "description": "Create the core NEXON OpenAPI client with proper TypeScript type definitions and HTTP request handling",
-        "details": "Implement NexonApiClient class in src/api/nexon-client.ts using Axios for HTTP requests, define all TypeScript interfaces in src/api/types.ts (CharacterInfo, UnionInfo, GuildInfo, GuildMember), create API constants in src/api/constants.ts with NEXON OpenAPI endpoints, implement proper error handling and rate limiting, add request/response logging with Winston, include API key validation and authentication headers",
-        "testStrategy": "Unit tests for API client methods with mocked HTTP responses, integration tests with actual NEXON API using test key, validate TypeScript type definitions match API responses, test error handling for various API failure scenarios",
+        "id": 12,
+        "title": "Implement NEXON MapleStory SEA API Client Foundation",
+        "description": "Create base HTTP client for NEXON MapleStory SEA OpenAPI with authentication, rate limiting, and error handling",
+        "details": "Create APIClient class with axios/fetch for HTTP requests, implement API key authentication headers, add rate limiting with exponential backoff, create base error classes for API errors, implement request/response logging, add retry logic for transient failures, configure base URL for SEA endpoints, add request timeout handling",
+        "testStrategy": "Unit tests for API client methods, mock API responses for testing, test rate limiting behavior, validate error handling scenarios, test authentication header injection",
         "priority": "high",
         "dependencies": [
-          1
+          11
         ],
-        "status": "done",
+        "status": "pending",
         "subtasks": []
       },
       {
-        "id": 3,
-        "title": "Implement MCP Server Foundation",
-        "description": "Set up the core Model Context Protocol server implementation using the MCP TypeScript SDK",
-        "details": "Create McpServer class in src/server.ts implementing MCP TypeScript SDK interfaces, set up server initialization and lifecycle management, implement tool registration system, create base tool interface and abstract classes, add proper error handling and logging for MCP operations, implement server start/stop methods, configure JSON-RPC communication protocol",
-        "testStrategy": "Unit tests for MCP server initialization and tool registration, integration tests for MCP protocol communication, validate server lifecycle management, test tool discovery and execution workflow",
+        "id": 13,
+        "title": "Implement Character OCID Lookup and Basic Character Information",
+        "description": "Create character name to OCID conversion and basic character information retrieval functionality",
+        "details": "Implement getCharacterOcid(characterName: string) method to convert names to unique identifiers, create getCharacterBasic(ocid: string) for basic info (name, level, job, world), add input validation for character names, handle special characters and encoding, implement caching for OCID lookups, add world server validation for SEA region",
+        "testStrategy": "Test character name lookup with valid/invalid names, verify OCID format validation, test basic character info retrieval, validate world server filtering for SEA region",
         "priority": "high",
         "dependencies": [
-          2
+          12
         ],
-        "status": "done",
+        "status": "pending",
         "subtasks": []
       },
       {
-        "id": 4,
-        "title": "Implement CLI Interface and Entry Point",
-        "description": "Create the command-line interface that allows NPX execution with proper argument parsing and environment configuration",
-        "details": "Implement CLI entry point in src/index.ts with shebang for Node.js execution, use Commander.js for argument parsing (--port, --debug options), implement environment variable handling for NEXON_API_KEY, add CLI help text and usage instructions, create server startup logic with proper configuration, implement graceful shutdown handling, add debug mode with verbose logging",
-        "testStrategy": "Test CLI argument parsing with various combinations, validate environment variable detection, test NPX execution locally after npm link, verify CLI help text and error messages, test graceful shutdown scenarios",
+        "id": 14,
+        "title": "Implement Character Statistics and Equipment Information",
+        "description": "Add comprehensive character statistics, equipment details, and combat power information",
+        "details": "Create getCharacterStat(ocid: string) for primary stats and combat power, implement getCharacterItemEquipment(ocid: string) for equipment details, add getCharacterCashItemEquipment(ocid: string) for cash items, create getCharacterBeautyEquipment(ocid: string) for cosmetics, implement set effect calculation, add equipment enhancement level parsing",
+        "testStrategy": "Test stat calculation accuracy, verify equipment parsing for different item types, validate set effect detection, test cash item and beauty equipment retrieval",
+        "priority": "medium",
+        "dependencies": [
+          13
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Implement Guild System and Guild Member Management",
+        "description": "Create guild lookup, information retrieval, and member management functionality",
+        "details": "Implement getGuildId(guildName: string) for guild name to ID conversion, create getGuildBasic(guildId: string) for guild info (name, level, member count), add getGuildMembers(guildId: string) if supported by SEA API, implement guild search with fuzzy matching, add guild ranking position retrieval, handle guild privacy settings",
+        "testStrategy": "Test guild name lookup and validation, verify guild info retrieval accuracy, test member list functionality if available, validate guild ranking data",
+        "priority": "medium",
+        "dependencies": [
+          12
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "Implement Ranking System for Characters and Guilds",
+        "description": "Create comprehensive ranking queries for overall character rankings, guild rankings, and world-specific rankings",
+        "details": "Implement getOverallRanking(world?: string, page?: number) for level-based rankings, create getGuildRanking(world?: string, page?: number) for guild power rankings, add world-specific filtering for SEA servers, implement pagination for large ranking lists, add ranking position lookup for specific characters/guilds, cache ranking data with appropriate TTL",
+        "testStrategy": "Test ranking retrieval for different worlds, verify pagination functionality, validate ranking position accuracy, test caching behavior for ranking data",
+        "priority": "medium",
+        "dependencies": [
+          13,
+          15
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "Implement Game Information and Server Status",
+        "description": "Add server status monitoring, game notices, and event information retrieval",
+        "details": "Create getServerStatus() for world server availability and population, implement getNotices() for game announcements, add getCurrentEvents() for active events and promotions, implement server maintenance schedule retrieval, add time zone handling for SEA region, create notification parsing for different notice types",
+        "testStrategy": "Test server status accuracy, verify notice parsing and formatting, validate event information retrieval, test time zone conversion for SEA region",
+        "priority": "medium",
+        "dependencies": [
+          12
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 18,
+        "title": "Implement MCP Server Tools and Protocol Integration",
+        "description": "Create MCP tool definitions and integrate all API functionality with Model Context Protocol",
+        "details": "Define MCP tools for character lookup, guild search, ranking queries, server status, create tool schemas with proper TypeScript types, implement tool handlers with parameter validation, add comprehensive error handling for MCP responses, create tool descriptions and examples, implement result formatting for AI consumption, add logging for MCP requests",
+        "testStrategy": "Test all MCP tool definitions, verify parameter validation, test error response formatting, validate tool output structure, test integration with MCP SDK",
         "priority": "high",
         "dependencies": [
-          3
+          13,
+          14,
+          15,
+          16,
+          17
         ],
-        "status": "done",
+        "status": "pending",
         "subtasks": []
       },
       {
-        "id": 5,
-        "title": "Implement Character Information Tools",
-        "description": "Create MCP tools for retrieving character data including basic info, stats, and equipment",
-        "details": "Implement character tools in src/tools/character.ts with get_character_info, get_character_stats, and get_character_equipment tools, define JSON schema for input validation, integrate with NEXON API client for data retrieval, implement proper error handling for invalid character names, add response formatting and type conversion, create character OCID lookup functionality",
-        "testStrategy": "Unit tests for each character tool with mocked API responses, integration tests with real character data, validate input schema enforcement, test error handling for non-existent characters, verify response data structure matches MCP tool format",
-        "priority": "medium",
+        "id": 19,
+        "title": "Implement Comprehensive Error Handling and Logging",
+        "description": "Add robust error handling, logging system, and monitoring for production deployment",
+        "details": "Create custom error classes for different failure types (API errors, validation errors, network errors), implement structured logging with Winston or similar, add error sanitization to prevent sensitive data exposure, create audit logging for API usage tracking, implement health check endpoints, add performance monitoring, create error recovery strategies",
+        "testStrategy": "Test error handling scenarios, verify log output format and levels, test error sanitization, validate audit logging accuracy, test health check responses",
+        "priority": "high",
         "dependencies": [
-          4
+          18
         ],
-        "status": "done",
+        "status": "pending",
         "subtasks": []
       },
       {
-        "id": 6,
-        "title": "Implement Union Information Tools",
-        "description": "Create MCP tools for retrieving union data and rankings",
-        "details": "Implement union tools in src/tools/union.ts with get_union_info and get_union_ranking tools, define input schemas for character name and optional world/page parameters, integrate with NEXON union APIs, implement pagination support for rankings, add union level and grade formatting, handle union artifact information display",
-        "testStrategy": "Unit tests for union info retrieval and ranking pagination, integration tests with actual union data, validate ranking page boundaries, test optional parameter handling, verify union artifact data formatting",
+        "id": 20,
+        "title": "Create Documentation, Testing, and Production Deployment Setup",
+        "description": "Finalize comprehensive documentation, testing suite, and production deployment configuration",
+        "details": "Create README with setup instructions and API usage examples, write comprehensive API documentation, implement integration tests for all endpoints, create deployment scripts and Docker configuration, setup CI/CD pipeline, create environment configuration templates, add performance benchmarks, create troubleshooting guides for common issues",
+        "testStrategy": "Verify documentation completeness and accuracy, test deployment scripts, validate CI/CD pipeline, test environment configuration, verify integration test coverage > 80%",
         "priority": "medium",
         "dependencies": [
-          5
+          19
         ],
-        "status": "done",
-        "subtasks": []
-      },
-      {
-        "id": 7,
-        "title": "Implement Guild Information Tools",
-        "description": "Create MCP tools for retrieving guild data and member information",
-        "details": "Implement guild tools in src/tools/guild.ts with get_guild_info and get_guild_members tools, define schemas requiring guild name and world name, implement guild ID lookup functionality, create member list formatting with ranks and grades, handle guild-not-found errors gracefully, add guild statistics display",
-        "testStrategy": "Unit tests for guild lookup and member retrieval, integration tests with existing guilds, test guild name/world validation, verify member list formatting, test error handling for non-existent guilds",
-        "priority": "medium",
-        "dependencies": [
-          6
-        ],
-        "status": "done",
-        "subtasks": []
-      },
-      {
-        "id": 8,
-        "title": "Implement Extended Features (Rankings, Probability, Notices)",
-        "description": "Add remaining MCP tools for rankings, probability information, and game notices",
-        "details": "Implement remaining tools in src/tools/ranking.ts, src/tools/probability.ts, and src/tools/notice.ts, create ranking tools for various categories (level, union, guild), implement probability information tools for item enhancement and cubes, add notice/announcement retrieval tools, implement proper data filtering and pagination, add date formatting for notices",
-        "testStrategy": "Unit tests for each tool category with appropriate mock data, integration tests with live API endpoints, validate ranking pagination and filtering, test probability data accuracy, verify notice date formatting and content display",
-        "priority": "medium",
-        "dependencies": [
-          7
-        ],
-        "status": "done",
-        "subtasks": []
-      },
-      {
-        "id": 9,
-        "title": "Implement Comprehensive Testing Suite",
-        "description": "Create complete unit and integration test coverage with Jest and establish CI/CD pipeline",
-        "details": "Complete Jest test suite with 90%+ coverage as specified, create unit tests for all modules with proper mocking, implement integration tests using test API key, set up GitHub Actions CI/CD pipeline with Node.js 18/20 matrix, configure automated testing on PR and push, add coverage reporting with Codecov, implement security scanning with npm audit, create performance benchmarks",
-        "testStrategy": "Validate test coverage meets 90% threshold, verify all critical paths are tested, ensure integration tests work with actual API, confirm CI pipeline runs successfully, validate security scanning passes, test performance benchmarks meet requirements",
-        "priority": "medium",
-        "dependencies": [
-          8
-        ],
-        "status": "done",
-        "subtasks": []
-      },
-      {
-        "id": 10,
-        "title": "Package Documentation and NPM Publishing",
-        "description": "Complete documentation, build distribution package, and publish to NPM registry",
-        "details": "Generate TypeDoc documentation for all public APIs, create comprehensive README.md with installation and usage examples, write API_REFERENCE.md with all MCP tools documented, create INSTALLATION.md for setup instructions, add EXAMPLES.md with real-world usage scenarios, prepare NPM package with proper files configuration, build production distribution, publish to NPM registry with public access, test NPX installation and execution",
-        "testStrategy": "Validate TypeDoc generates complete documentation, verify README examples work correctly, test NPM package installation process, confirm NPX execution works from clean environment, validate Claude Desktop integration instructions, ensure all documentation links are functional",
-        "priority": "medium",
-        "dependencies": [
-          9
-        ],
-        "status": "done",
+        "status": "pending",
         "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-06-27T03:45:10.473Z",
-      "updated": "2025-06-27T08:24:37.517Z",
+      "updated": "2025-06-28T00:22:03.722Z",
       "description": "Tasks for master context"
     }
   }

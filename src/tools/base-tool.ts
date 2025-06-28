@@ -113,7 +113,7 @@ export abstract class BaseTool implements ITool {
   /**
    * Tool-specific validation logic
    */
-  protected validateImpl(_args: Record<string, any>): boolean {
+  protected validateImpl(_args: Record<string, unknown>): boolean {
     return true; // Override in subclasses for custom validation
   }
 
