@@ -21,12 +21,14 @@ import {
   GuildRanking,
   ApiError,
 } from './types';
-import { API_CONFIG, ENDPOINTS, HEADERS, HTTP_STATUS, ERROR_MESSAGES } from './constants';
+import { API_CONFIG, ENDPOINTS, HEADERS, HTTP_STATUS, ERROR_MESSAGES, RATE_LIMIT } from './constants';
 
 export class NexonApiClient {
   private client: AxiosInstance;
   private logger: Logger;
   private apiKey: string;
+  private requestQueue: Array<{ resolve: () => void; timestamp: number }> = [];
+  private isProcessingQueue = false;
 
   constructor(config: ApiClientConfig) {
     this.apiKey = config.apiKey;
@@ -142,9 +144,89 @@ export class NexonApiClient {
     }
   }
 
+  private async waitForRateLimit(): Promise<void> {
+    return new Promise((resolve) => {
+      const now = Date.now();
+      this.requestQueue.push({ resolve, timestamp: now });
+      
+      if (!this.isProcessingQueue) {
+        this.processQueue();
+      }
+    });
+  }
+
+  private async processQueue(): Promise<void> {
+    this.isProcessingQueue = true;
+    
+    while (this.requestQueue.length > 0) {
+      const now = Date.now();
+      const recentRequests = this.requestQueue.filter(req => now - req.timestamp < 1000);
+      
+      if (recentRequests.length >= RATE_LIMIT.REQUESTS_PER_SECOND) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        continue;
+      }
+      
+      const request = this.requestQueue.shift();
+      if (request) {
+        request.resolve();
+      }
+    }
+    
+    this.isProcessingQueue = false;
+  }
+
+  private async retryRequest<T>(
+    operation: () => Promise<T>,
+    maxRetries: number = API_CONFIG.RETRY_ATTEMPTS
+  ): Promise<T> {
+    let lastError: unknown;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        await this.waitForRateLimit();
+        return await operation();
+      } catch (error: unknown) {
+        lastError = error;
+        
+        const apiError = error as ApiError;
+        if (
+          apiError?.error?.name === 'RATE_LIMITED' ||
+          apiError?.error?.name === 'SERVICE_UNAVAILABLE'
+        ) {
+          if (attempt < maxRetries) {
+            const delay = API_CONFIG.RETRY_DELAY * Math.pow(2, attempt);
+            this.logger.info(`Rate limited, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1})`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+        }
+        
+        if (attempt < maxRetries && this.isRetryableError(error)) {
+          const delay = API_CONFIG.RETRY_DELAY * Math.pow(2, attempt);
+          this.logger.info(`Request failed, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1})`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        
+        throw error;
+      }
+    }
+    
+    throw lastError;
+  }
+
+  private isRetryableError(error: unknown): boolean {
+    const apiError = error as ApiError;
+    const retryableErrors = ['RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'TIMEOUT_ERROR'];
+    return retryableErrors.includes(apiError?.error?.name || '');
+  }
+
   private async request<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
-    const response = await this.client.get<T>(endpoint, { params });
-    return response.data;
+    return this.retryRequest(async () => {
+      const response = await this.client.get<T>(endpoint, { params });
+      return response.data;
+    });
   }
 
   // Character API methods
