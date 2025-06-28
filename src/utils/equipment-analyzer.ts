@@ -25,13 +25,13 @@ export interface SetEffect {
  */
 export function parseStarforceLevel(item: any): number {
   if (!item) return 0;
-  
+
   // Check starforce field
   if (item.starforce && typeof item.starforce === 'string') {
     const starforce = parseInt(item.starforce, 10);
     return isNaN(starforce) ? 0 : starforce;
   }
-  
+
   // Check item name for star indicators
   if (item.item_name && typeof item.item_name === 'string') {
     const starMatch = item.item_name.match(/\((\d+)성\)/);
@@ -39,7 +39,7 @@ export function parseStarforceLevel(item: any): number {
       return parseInt(starMatch[1], 10);
     }
   }
-  
+
   return 0;
 }
 
@@ -48,11 +48,11 @@ export function parseStarforceLevel(item: any): number {
  */
 export function parseScrollUpgrades(item: any): number {
   if (!item) return 0;
-  
+
   // Check upgrade slots used vs available
   const upgradeCount = item.scroll_upgrade || 0;
   const maxUpgrade = item.scroll_upgradeable_count || 0;
-  
+
   return Math.min(upgradeCount, maxUpgrade);
 }
 
@@ -61,9 +61,9 @@ export function parseScrollUpgrades(item: any): number {
  */
 export function parsePotentialGrade(item: any): string {
   if (!item || !item.potential_option_grade) return 'None';
-  
+
   const grade = item.potential_option_grade.toLowerCase();
-  
+
   switch (grade) {
     case 'rare':
     case '레어':
@@ -93,11 +93,11 @@ export function calculateCombatPower(stats: Record<string, number>): number {
   const luk = stats.luk || 0;
   const attackPower = stats.attack_power || 0;
   const magicPower = stats.magic_power || 0;
-  
+
   // Basic stat contribution (simplified)
   const primaryStat = Math.max(str, dex, int, luk);
   const weaponPower = Math.max(attackPower, magicPower);
-  
+
   return Math.floor(primaryStat * 1.5 + weaponPower * 2);
 }
 
@@ -106,11 +106,11 @@ export function calculateCombatPower(stats: Record<string, number>): number {
  */
 export function analyzeSetEffects(equipment: any[]): SetEffect[] {
   if (!equipment || !Array.isArray(equipment)) return [];
-  
+
   const setMap = new Map<string, number>();
-  
+
   // Count items by set name
-  equipment.forEach(item => {
+  equipment.forEach((item) => {
     if (item?.item_equipment_part && item?.item_name) {
       const setName = extractSetName(item.item_name);
       if (setName) {
@@ -118,21 +118,21 @@ export function analyzeSetEffects(equipment: any[]): SetEffect[] {
       }
     }
   });
-  
+
   // Convert to set effects array
   const setEffects: SetEffect[] = [];
-  
+
   setMap.forEach((count, setName) => {
     const setEffect: SetEffect = {
       setName,
       activeCount: count,
       totalCount: getSetTotalCount(setName),
-      effects: getSetEffectDetails(setName, count)
+      effects: getSetEffectDetails(setName, count),
     };
     setEffects.push(setEffect);
   });
-  
-  return setEffects.filter(set => set.activeCount >= 2); // Only show sets with 2+ items
+
+  return setEffects.filter((set) => set.activeCount >= 2); // Only show sets with 2+ items
 }
 
 /**
@@ -140,21 +140,21 @@ export function analyzeSetEffects(equipment: any[]): SetEffect[] {
  */
 function extractSetName(itemName: string): string | null {
   if (!itemName) return null;
-  
+
   // Common MapleStory set patterns
   const setPatterns = [
-    /(.+)\s세트/,  // Korean set pattern
-    /(.+)\sSet/i,  // English set pattern
-    /(펜살리르|루타비스|넥슨|CRA|아케인|압솔|에테르넬|제네시스)/i // Known set names
+    /(.+)\s세트/, // Korean set pattern
+    /(.+)\sSet/i, // English set pattern
+    /(펜살리르|루타비스|넥슨|CRA|아케인|압솔|에테르넬|제네시스)/i, // Known set names
   ];
-  
+
   for (const pattern of setPatterns) {
     const match = itemName.match(pattern);
     if (match && match[1]) {
       return match[1].trim();
     }
   }
-  
+
   return null;
 }
 
@@ -164,29 +164,32 @@ function extractSetName(itemName: string): string | null {
 function getSetTotalCount(setName: string): number {
   // Common set sizes (simplified)
   const knownSets: Record<string, number> = {
-    '펜살리르': 7,
-    '루타비스': 8,
-    'CRA': 4,
-    '아케인': 6,
-    '압솔': 6,
-    '에테르넬': 6,
-    '제네시스': 6
+    펜살리르: 7,
+    루타비스: 8,
+    CRA: 4,
+    아케인: 6,
+    압솔: 6,
+    에테르넬: 6,
+    제네시스: 6,
   };
-  
+
   return knownSets[setName] || 8; // Default to 8 pieces
 }
 
 /**
  * Get set effect details
  */
-function getSetEffectDetails(setName: string, activeCount: number): Array<{
+function getSetEffectDetails(
+  setName: string,
+  activeCount: number
+): Array<{
   requiredCount: number;
   description: string;
   stats: Record<string, number>;
 }> {
   // Simplified set effects (actual effects are much more complex)
   const effects = [];
-  
+
   for (let i = 2; i <= activeCount; i++) {
     effects.push({
       requiredCount: i,
@@ -197,11 +200,11 @@ function getSetEffectDetails(setName: string, activeCount: number): Array<{
         int: i * 10,
         luk: i * 10,
         attack_power: i * 5,
-        magic_power: i * 5
-      }
+        magic_power: i * 5,
+      },
     });
   }
-  
+
   return effects;
 }
 
@@ -210,13 +213,13 @@ function getSetEffectDetails(setName: string, activeCount: number): Array<{
  */
 export function calculateEnhancementScore(enhancement: EquipmentEnhancement): number {
   let score = 0;
-  
+
   // Starforce contributes most to enhancement score
   score += enhancement.starforceLevel * 10;
-  
+
   // Scroll upgrades contribute moderately
   score += enhancement.scrollUpgrades * 5;
-  
+
   // Potential grade contributes significantly
   switch (enhancement.potentialGrade) {
     case 'Legendary':
@@ -232,7 +235,7 @@ export function calculateEnhancementScore(enhancement: EquipmentEnhancement): nu
       score += 10;
       break;
   }
-  
+
   // Additional potential grade bonus
   switch (enhancement.additionalPotentialGrade) {
     case 'Legendary':
@@ -248,7 +251,7 @@ export function calculateEnhancementScore(enhancement: EquipmentEnhancement): nu
       score += 5;
       break;
   }
-  
+
   return score;
 }
 
@@ -260,7 +263,7 @@ export function analyzeEquipmentPiece(item: any): EquipmentEnhancement {
     starforceLevel: parseStarforceLevel(item),
     scrollUpgrades: parseScrollUpgrades(item),
     potentialGrade: parsePotentialGrade(item),
-    additionalPotentialGrade: parsePotentialGradeAdditional(item) // For additional potential
+    additionalPotentialGrade: parsePotentialGradeAdditional(item), // For additional potential
   };
 }
 
@@ -269,9 +272,9 @@ export function analyzeEquipmentPiece(item: any): EquipmentEnhancement {
  */
 function parsePotentialGradeAdditional(item: any): string {
   if (!item || !item.additional_potential_option_grade) return 'None';
-  
+
   const grade = item.additional_potential_option_grade.toLowerCase();
-  
+
   switch (grade) {
     case 'rare':
     case '레어':

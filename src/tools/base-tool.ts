@@ -291,6 +291,7 @@ export enum ToolCategory {
   GUILD = 'guild',
   RANKING = 'ranking',
   UTILITY = 'utility',
+  SYSTEM = 'system',
 }
 
 /**

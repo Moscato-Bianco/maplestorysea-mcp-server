@@ -19,9 +19,10 @@ export class MemoryCache {
   /**
    * Set a value in the cache with TTL (time to live) in milliseconds
    */
-  set<T>(key: string, value: T, ttl: number = 300000): void { // Default 5 minutes
+  set<T>(key: string, value: T, ttl: number = 300000): void {
+    // Default 5 minutes
     const now = Date.now();
-    
+
     // Remove expired entries if cache is getting full
     if (this.cache.size >= this.maxSize) {
       this.cleanup();
@@ -39,7 +40,7 @@ export class MemoryCache {
    */
   get<T>(key: string): T | null {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       return null;
     }
@@ -90,7 +91,7 @@ export class MemoryCache {
       }
     }
 
-    keysToDelete.forEach(key => this.cache.delete(key));
+    keysToDelete.forEach((key) => this.cache.delete(key));
   }
 
   /**
@@ -124,9 +125,9 @@ export class MemoryCache {
   static generateApiCacheKey(endpoint: string, params: Record<string, any>): string {
     const sortedParams = Object.keys(params)
       .sort()
-      .map(key => `${key}=${params[key]}`)
+      .map((key) => `${key}=${params[key]}`)
       .join('&');
-    
+
     return `api:${endpoint}:${sortedParams}`;
   }
 }

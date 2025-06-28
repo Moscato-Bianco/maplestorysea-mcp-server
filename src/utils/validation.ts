@@ -20,7 +20,7 @@ export function validateCharacterName(characterName: string): void {
   }
 
   const trimmedName = characterName.trim();
-  
+
   if (trimmedName.length === 0) {
     throw new ValidationError('Character name cannot be empty');
   }
@@ -36,7 +36,9 @@ export function validateCharacterName(characterName: string): void {
   // Check for valid characters (Korean, English, numbers)
   const validCharPattern = /^[가-힣a-zA-Z0-9]+$/;
   if (!validCharPattern.test(trimmedName)) {
-    throw new ValidationError('Character name can only contain Korean characters, English letters, and numbers');
+    throw new ValidationError(
+      'Character name can only contain Korean characters, English letters, and numbers'
+    );
   }
 
   // Check for invalid character combinations
@@ -61,7 +63,7 @@ export function validateWorldName(worldName: string): void {
   }
 
   const trimmedWorld = worldName.trim();
-  
+
   if (!WORLDS.includes(trimmedWorld as any)) {
     throw new ValidationError(`Invalid world name. Valid worlds: ${WORLDS.join(', ')}`);
   }
@@ -76,7 +78,7 @@ export function validateOcid(ocid: string): void {
   }
 
   const trimmedOcid = ocid.trim();
-  
+
   if (trimmedOcid.length === 0) {
     throw new ValidationError('OCID cannot be empty');
   }
@@ -108,7 +110,7 @@ export function validateDate(date: string): void {
   // Check if date is not in the future
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
+
   if (parsedDate > today) {
     throw new ValidationError('Date cannot be in the future');
   }

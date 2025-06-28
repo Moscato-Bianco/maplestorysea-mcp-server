@@ -595,3 +595,199 @@ export class GetCharacterFullInfoTool extends EnhancedBaseTool {
     }
   }
 }
+
+/**
+ * Tool for getting comprehensive character analysis
+ */
+export class GetCharacterAnalysisTool extends EnhancedBaseTool {
+  public readonly name = 'get_character_analysis';
+  public readonly description =
+    'Get comprehensive character analysis including equipment scoring, set effects, and improvement recommendations';
+
+  public readonly inputSchema: JSONSchema7 = {
+    type: 'object',
+    properties: {
+      characterName: {
+        type: 'string',
+        description: 'The name of the character to analyze',
+        minLength: 1,
+        maxLength: 12,
+        pattern: '^[a-zA-Z0-9가-힣]+$',
+      },
+      date: {
+        type: 'string',
+        description: 'Date for analysis in YYYY-MM-DD format (optional)',
+        pattern: '^\\d{4}-\\d{2}-\\d{2}$',
+      },
+    },
+    required: ['characterName'],
+    additionalProperties: false,
+  };
+
+  public readonly metadata = {
+    category: ToolCategory.CHARACTER,
+    tags: ['character', 'analysis', 'equipment', 'recommendations', 'scoring'],
+    examples: [
+      {
+        description: 'Analyze character equipment and stats',
+        arguments: { characterName: '스카니아용사' },
+      },
+    ],
+  };
+
+  protected async executeImpl(
+    args: Record<string, any>,
+    context: ToolContext
+  ): Promise<ToolResult> {
+    const characterName = this.getRequiredString(args, 'characterName');
+    const date = this.getOptionalString(args, 'date');
+
+    try {
+      const startTime = Date.now();
+
+      const analysis = await context.nexonClient.getCharacterAnalysis(characterName, date);
+      const executionTime = Date.now() - startTime;
+
+      context.logger.info('Character analysis completed', {
+        characterName,
+        characterScore: analysis.analysis?.characterScore,
+        equipmentCount: analysis.equipment?.item_equipment?.length || 0,
+        setEffectsCount: analysis.analysis?.equipment?.setEffects?.length || 0,
+        executionTime,
+      });
+
+      return this.formatResult(analysis, {
+        executionTime,
+        cacheHit: false,
+        apiCalls: 8, // Multiple API calls for comprehensive analysis
+      });
+    } catch (error) {
+      context.logger.error('Failed to analyze character', {
+        characterName,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      return this.formatError(
+        `Failed to analyze character "${characterName}": ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+}
+
+/**
+ * Tool for finding character ranking position
+ */
+export class FindCharacterRankingTool extends EnhancedBaseTool {
+  public readonly name = 'find_character_ranking';
+  public readonly description =
+    "Find a character's position in the overall ranking system across multiple pages";
+
+  public readonly inputSchema: JSONSchema7 = {
+    type: 'object',
+    properties: {
+      characterName: {
+        type: 'string',
+        description: 'The name of the character to find in rankings',
+        minLength: 1,
+        maxLength: 12,
+        pattern: '^[a-zA-Z0-9가-힣]+$',
+      },
+      worldName: {
+        type: 'string',
+        description: 'World/server name to search in (optional)',
+        enum: [
+          '스카니아',
+          '베라',
+          '루나',
+          '제니스',
+          '크로아',
+          '유니온',
+          '엘리시움',
+          '이노시스',
+          '레드',
+          '오로라',
+          '아케인',
+          '노바',
+          '리부트',
+          '리부트2',
+        ],
+      },
+      className: {
+        type: 'string',
+        description: 'Character class to filter by (optional)',
+      },
+      maxPages: {
+        type: 'number',
+        description: 'Maximum pages to search (default: 10)',
+        minimum: 1,
+        maximum: 20,
+      },
+    },
+    required: ['characterName'],
+    additionalProperties: false,
+  };
+
+  public readonly metadata = {
+    category: ToolCategory.CHARACTER,
+    tags: ['character', 'ranking', 'position', 'search'],
+    examples: [
+      {
+        description: 'Find character ranking position',
+        arguments: { characterName: '스카니아용사' },
+      },
+      {
+        description: 'Find ranking in specific world',
+        arguments: { characterName: '스카니아용사', worldName: '스카니아' },
+      },
+    ],
+  };
+
+  protected async executeImpl(
+    args: Record<string, any>,
+    context: ToolContext
+  ): Promise<ToolResult> {
+    const characterName = this.getRequiredString(args, 'characterName');
+    const worldName = this.getOptionalString(args, 'worldName');
+    const className = this.getOptionalString(args, 'className');
+    const maxPages = this.getOptionalNumber(args, 'maxPages', 10);
+
+    try {
+      const startTime = Date.now();
+
+      const result = await context.nexonClient.findCharacterRankingPosition(
+        characterName,
+        worldName,
+        className,
+        maxPages
+      );
+      const executionTime = Date.now() - startTime;
+
+      context.logger.info('Character ranking search completed', {
+        characterName,
+        found: result.found,
+        position: result.position,
+        searchedPages: result.searchedPages,
+        executionTime,
+      });
+
+      return this.formatResult(result, {
+        executionTime,
+        cacheHit: false,
+        apiCalls: result.searchedPages,
+      });
+    } catch (error) {
+      context.logger.error('Failed to find character ranking', {
+        characterName,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      return this.formatError(
+        `Failed to find ranking for character "${characterName}": ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+}

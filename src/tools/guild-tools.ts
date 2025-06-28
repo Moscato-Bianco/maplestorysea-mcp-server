@@ -157,6 +157,136 @@ export class GetGuildInfoTool extends EnhancedBaseTool {
 }
 
 /**
+ * Tool for searching guilds with fuzzy matching
+ */
+export class SearchGuildsTool extends EnhancedBaseTool {
+  public readonly name = 'search_guilds';
+  public readonly description =
+    'Search for guilds using fuzzy matching to find similar guild names and provide comprehensive guild information';
+
+  public readonly inputSchema: JSONSchema7 = {
+    type: 'object',
+    properties: {
+      guildName: {
+        type: 'string',
+        description: 'Guild name to search for (supports partial/fuzzy matching)',
+        minLength: 1,
+        maxLength: 12,
+      },
+      worldName: {
+        type: 'string',
+        description: 'World/server to search in (optional)',
+        enum: [
+          '스카니아',
+          '베라',
+          '루나',
+          '제니스',
+          '크로아',
+          '유니온',
+          '엘리시움',
+          '이노시스',
+          '레드',
+          '오로라',
+          '아케인',
+          '노바',
+          '리부트',
+          '리부트2',
+        ],
+      },
+      maxResults: {
+        type: 'number',
+        description: 'Maximum number of results to return (default: 10)',
+        minimum: 1,
+        maximum: 50,
+        default: 10,
+      },
+      includeDetails: {
+        type: 'boolean',
+        description: 'Include detailed guild information (default: true)',
+        default: true,
+      },
+    },
+    required: ['guildName'],
+    additionalProperties: false,
+  };
+
+  public readonly metadata = {
+    category: ToolCategory.GUILD,
+    tags: ['guild', 'search', 'fuzzy', 'find', 'discovery'],
+    examples: [
+      {
+        description: 'Search for guilds by name',
+        arguments: { guildName: '길드' },
+      },
+      {
+        description: 'Search guilds in specific world',
+        arguments: { guildName: '길드', worldName: '스카니아' },
+      },
+      {
+        description: 'Search with limited results',
+        arguments: { guildName: '길드', maxResults: 5 },
+      },
+    ],
+  };
+
+  protected async executeImpl(
+    args: Record<string, any>,
+    context: ToolContext
+  ): Promise<ToolResult> {
+    const guildName = this.getRequiredString(args, 'guildName');
+    const worldName = this.getOptionalString(args, 'worldName');
+    const maxResults = this.getOptionalNumber(args, 'maxResults', 10);
+    const includeDetails = this.getOptionalBoolean(args, 'includeDetails', true);
+
+    try {
+      const startTime = Date.now();
+
+      const results = await context.nexonClient.searchGuilds(
+        guildName,
+        worldName || '',
+        maxResults
+      );
+      const executionTime = Date.now() - startTime;
+
+      context.logger.info('Guild search completed', {
+        searchTerm: guildName,
+        worldName: worldName || 'all',
+        resultsFound: results.length,
+        executionTime,
+      });
+
+      return this.formatResult(
+        {
+          searchTerm: guildName,
+          worldName: worldName || 'all',
+          resultsCount: results.length,
+          maxResults,
+          includeDetails,
+          results,
+        },
+        {
+          executionTime,
+          cacheHit: false,
+          apiCalls: results.length * (includeDetails ? 2 : 1), // Guild ID + details per result
+        }
+      );
+    } catch (error) {
+      context.logger.error('Failed to search guilds', {
+        guildName,
+        worldName: worldName || 'all',
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      return this.formatError(
+        `Failed to search for guilds with name "${guildName}": ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+}
+
+/**
  * Tool for getting guild ranking
  */
 export class GetGuildRankingTool extends EnhancedBaseTool {

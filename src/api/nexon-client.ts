@@ -21,22 +21,29 @@ import {
   GuildRanking,
   ApiError,
 } from './types';
-import { API_CONFIG, ENDPOINTS, HEADERS, HTTP_STATUS, ERROR_MESSAGES, RATE_LIMIT, WORLDS } from './constants';
+import {
+  API_CONFIG,
+  ENDPOINTS,
+  HEADERS,
+  HTTP_STATUS,
+  ERROR_MESSAGES,
+  RATE_LIMIT,
+  WORLDS,
+} from './constants';
 import { MemoryCache, defaultCache } from '../utils/cache';
-import { 
-  validateCharacterName, 
-  validateWorldName, 
-  validateOcid, 
+import {
+  validateCharacterName,
+  validateWorldName,
+  validateOcid,
   validateDate,
   sanitizeCharacterName,
   sanitizeWorldName,
-  ValidationError 
 } from '../utils/validation';
-import { 
-  analyzeSetEffects, 
-  analyzeEquipmentPiece, 
+import {
+  analyzeSetEffects,
+  analyzeEquipmentPiece,
   calculateCombatPower,
-  calculateEnhancementScore 
+  calculateEnhancementScore,
 } from '../utils/equipment-analyzer';
 import {
   validateGuildName,
@@ -45,7 +52,7 @@ import {
   calculateFuzzyScore,
   generateGuildNameVariations,
   calculateGuildScore,
-  GuildCacheKeys
+  GuildCacheKeys,
 } from '../utils/guild-utils';
 import {
   ServerStatus,
@@ -57,19 +64,17 @@ import {
   determineServerStatus,
   estimateWorldPopulation,
   formatNoticeContent,
-  ServerCacheKeys
+  ServerCacheKeys,
 } from '../utils/server-utils';
 import {
-  RankingType,
   GuildRankingType,
   validatePage,
-  validateRankingType,
   validateGuildRankingType,
   findCharacterPosition,
   findGuildPosition,
   parseRankingResponse,
   calculateRankingStats,
-  RankingCacheKeys
+  RankingCacheKeys,
 } from '../utils/ranking-utils';
 
 export class NexonApiClient {
@@ -199,7 +204,7 @@ export class NexonApiClient {
     return new Promise((resolve) => {
       const now = Date.now();
       this.requestQueue.push({ resolve, timestamp: now });
-      
+
       if (!this.isProcessingQueue) {
         this.processQueue();
       }
@@ -208,22 +213,22 @@ export class NexonApiClient {
 
   private async processQueue(): Promise<void> {
     this.isProcessingQueue = true;
-    
+
     while (this.requestQueue.length > 0) {
       const now = Date.now();
-      const recentRequests = this.requestQueue.filter(req => now - req.timestamp < 1000);
-      
+      const recentRequests = this.requestQueue.filter((req) => now - req.timestamp < 1000);
+
       if (recentRequests.length >= RATE_LIMIT.REQUESTS_PER_SECOND) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         continue;
       }
-      
+
       const request = this.requestQueue.shift();
       if (request) {
         request.resolve();
       }
     }
-    
+
     this.isProcessingQueue = false;
   }
 
@@ -232,14 +237,14 @@ export class NexonApiClient {
     maxRetries: number = API_CONFIG.RETRY_ATTEMPTS
   ): Promise<T> {
     let lastError: unknown;
-    
+
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         await this.waitForRateLimit();
         return await operation();
       } catch (error: unknown) {
         lastError = error;
-        
+
         const apiError = error as ApiError;
         if (
           apiError?.error?.name === 'RATE_LIMITED' ||
@@ -247,23 +252,27 @@ export class NexonApiClient {
         ) {
           if (attempt < maxRetries) {
             const delay = API_CONFIG.RETRY_DELAY * Math.pow(2, attempt);
-            this.logger.info(`Rate limited, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1})`);
-            await new Promise(resolve => setTimeout(resolve, delay));
+            this.logger.info(
+              `Rate limited, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1})`
+            );
+            await new Promise((resolve) => setTimeout(resolve, delay));
             continue;
           }
         }
-        
+
         if (attempt < maxRetries && this.isRetryableError(error)) {
           const delay = API_CONFIG.RETRY_DELAY * Math.pow(2, attempt);
-          this.logger.info(`Request failed, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1})`);
-          await new Promise(resolve => setTimeout(resolve, delay));
+          this.logger.info(
+            `Request failed, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1})`
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
         }
-        
+
         throw error;
       }
     }
-    
+
     throw lastError;
   }
 
@@ -289,15 +298,15 @@ export class NexonApiClient {
     // Check cache first
     const cacheKey = MemoryCache.generateOcidCacheKey(sanitizedName);
     const cachedResult = this.cache.get<{ ocid: string }>(cacheKey);
-    
+
     if (cachedResult) {
       this.logger.info('OCID lookup cache hit', { characterName: sanitizedName });
       return cachedResult;
     }
 
     try {
-      const result = await this.request<{ ocid: string }>(ENDPOINTS.CHARACTER.OCID, { 
-        character_name: sanitizedName 
+      const result = await this.request<{ ocid: string }>(ENDPOINTS.CHARACTER.OCID, {
+        character_name: sanitizedName,
       });
 
       // Validate OCID before caching
@@ -305,17 +314,17 @@ export class NexonApiClient {
 
       // Cache for 1 hour (OCID rarely changes)
       this.cache.set(cacheKey, result, 3600000);
-      
-      this.logger.info('OCID lookup successful', { 
-        characterName: sanitizedName, 
-        ocid: result.ocid 
+
+      this.logger.info('OCID lookup successful', {
+        characterName: sanitizedName,
+        ocid: result.ocid,
       });
 
       return result;
     } catch (error) {
-      this.logger.error('OCID lookup failed', { 
-        characterName: sanitizedName, 
-        error 
+      this.logger.error('OCID lookup failed', {
+        characterName: sanitizedName,
+        error,
       });
       throw error;
     }
@@ -331,7 +340,7 @@ export class NexonApiClient {
     // Check cache first
     const cacheKey = MemoryCache.generateCharacterBasicCacheKey(ocid, date);
     const cachedResult = this.cache.get<CharacterBasic>(cacheKey);
-    
+
     if (cachedResult) {
       this.logger.info('Character basic info cache hit', { ocid, date });
       return cachedResult;
@@ -352,20 +361,20 @@ export class NexonApiClient {
 
       // Cache for 30 minutes (character info changes less frequently)
       this.cache.set(cacheKey, result, 1800000);
-      
-      this.logger.info('Character basic info lookup successful', { 
-        ocid, 
+
+      this.logger.info('Character basic info lookup successful', {
+        ocid,
         date,
         characterName: result.character_name,
-        world: result.world_name 
+        world: result.world_name,
       });
 
       return result;
     } catch (error) {
-      this.logger.error('Character basic info lookup failed', { 
-        ocid, 
+      this.logger.error('Character basic info lookup failed', {
+        ocid,
         date,
-        error 
+        error,
       });
       throw error;
     }
@@ -379,9 +388,12 @@ export class NexonApiClient {
     }
 
     // Check cache first
-    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.STAT, { ocid, date: date || 'latest' });
+    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.STAT, {
+      ocid,
+      date: date || 'latest',
+    });
     const cachedResult = this.cache.get<CharacterStat>(cacheKey);
-    
+
     if (cachedResult) {
       this.logger.info('Character stat cache hit', { ocid, date });
       return cachedResult;
@@ -397,19 +409,19 @@ export class NexonApiClient {
 
       // Cache for 15 minutes (stats can change more frequently)
       this.cache.set(cacheKey, result, 900000);
-      
-      this.logger.info('Character stat lookup successful', { 
-        ocid, 
+
+      this.logger.info('Character stat lookup successful', {
+        ocid,
         date,
-        characterClass: result.character_class
+        characterClass: result.character_class,
       });
 
       return result;
     } catch (error) {
-      this.logger.error('Character stat lookup failed', { 
-        ocid, 
+      this.logger.error('Character stat lookup failed', {
+        ocid,
         date,
-        error 
+        error,
       });
       throw error;
     }
@@ -435,9 +447,12 @@ export class NexonApiClient {
     }
 
     // Check cache first
-    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.ITEM_EQUIPMENT, { ocid, date: date || 'latest' });
+    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.ITEM_EQUIPMENT, {
+      ocid,
+      date: date || 'latest',
+    });
     const cachedResult = this.cache.get<ItemEquipment>(cacheKey);
-    
+
     if (cachedResult) {
       this.logger.info('Character equipment cache hit', { ocid, date });
       return cachedResult;
@@ -453,19 +468,19 @@ export class NexonApiClient {
 
       // Cache for 20 minutes (equipment changes less frequently)
       this.cache.set(cacheKey, result, 1200000);
-      
-      this.logger.info('Character equipment lookup successful', { 
-        ocid, 
+
+      this.logger.info('Character equipment lookup successful', {
+        ocid,
         date,
-        equipmentCount: result.item_equipment?.length || 0
+        equipmentCount: result.item_equipment?.length || 0,
       });
 
       return result;
     } catch (error) {
-      this.logger.error('Character equipment lookup failed', { 
-        ocid, 
+      this.logger.error('Character equipment lookup failed', {
+        ocid,
         date,
-        error 
+        error,
       });
       throw error;
     }
@@ -479,9 +494,12 @@ export class NexonApiClient {
     }
 
     // Check cache first
-    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.CASHITEM_EQUIPMENT, { ocid, date: date || 'latest' });
+    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.CASHITEM_EQUIPMENT, {
+      ocid,
+      date: date || 'latest',
+    });
     const cachedResult = this.cache.get<any>(cacheKey);
-    
+
     if (cachedResult) {
       this.logger.info('Character cash item cache hit', { ocid, date });
       return cachedResult;
@@ -497,18 +515,18 @@ export class NexonApiClient {
 
       // Cache for 30 minutes (cash items change less frequently)
       this.cache.set(cacheKey, result, 1800000);
-      
-      this.logger.info('Character cash item lookup successful', { 
-        ocid, 
-        date
+
+      this.logger.info('Character cash item lookup successful', {
+        ocid,
+        date,
       });
 
       return result;
     } catch (error) {
-      this.logger.error('Character cash item lookup failed', { 
-        ocid, 
+      this.logger.error('Character cash item lookup failed', {
+        ocid,
         date,
-        error 
+        error,
       });
       throw error;
     }
@@ -522,9 +540,12 @@ export class NexonApiClient {
     }
 
     // Check cache first
-    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.BEAUTY_EQUIPMENT, { ocid, date: date || 'latest' });
+    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.BEAUTY_EQUIPMENT, {
+      ocid,
+      date: date || 'latest',
+    });
     const cachedResult = this.cache.get<any>(cacheKey);
-    
+
     if (cachedResult) {
       this.logger.info('Character beauty equipment cache hit', { ocid, date });
       return cachedResult;
@@ -540,18 +561,18 @@ export class NexonApiClient {
 
       // Cache for 1 hour (beauty equipment rarely changes)
       this.cache.set(cacheKey, result, 3600000);
-      
-      this.logger.info('Character beauty equipment lookup successful', { 
-        ocid, 
-        date
+
+      this.logger.info('Character beauty equipment lookup successful', {
+        ocid,
+        date,
       });
 
       return result;
     } catch (error) {
-      this.logger.error('Character beauty equipment lookup failed', { 
-        ocid, 
+      this.logger.error('Character beauty equipment lookup failed', {
+        ocid,
         date,
-        error 
+        error,
       });
       throw error;
     }
@@ -571,18 +592,18 @@ export class NexonApiClient {
     // Validate and sanitize inputs
     const sanitizedGuildName = sanitizeGuildName(guildName);
     const sanitizedWorldName = sanitizeWorldName(worldName);
-    
+
     validateGuildName(sanitizedGuildName);
     validateWorldName(sanitizedWorldName);
 
     // Check cache first
     const cacheKey = GuildCacheKeys.guildId(sanitizedGuildName, sanitizedWorldName);
     const cachedResult = this.cache.get<{ oguild_id: string }>(cacheKey);
-    
+
     if (cachedResult) {
-      this.logger.info('Guild ID lookup cache hit', { 
-        guildName: sanitizedGuildName, 
-        worldName: sanitizedWorldName 
+      this.logger.info('Guild ID lookup cache hit', {
+        guildName: sanitizedGuildName,
+        worldName: sanitizedWorldName,
       });
       return cachedResult;
     }
@@ -598,19 +619,19 @@ export class NexonApiClient {
 
       // Cache for 2 hours (guild IDs rarely change)
       this.cache.set(cacheKey, result, 7200000);
-      
-      this.logger.info('Guild ID lookup successful', { 
-        guildName: sanitizedGuildName, 
+
+      this.logger.info('Guild ID lookup successful', {
+        guildName: sanitizedGuildName,
         worldName: sanitizedWorldName,
-        guildId: result.oguild_id 
+        guildId: result.oguild_id,
       });
 
       return result;
     } catch (error) {
-      this.logger.error('Guild ID lookup failed', { 
-        guildName: sanitizedGuildName, 
+      this.logger.error('Guild ID lookup failed', {
+        guildName: sanitizedGuildName,
         worldName: sanitizedWorldName,
-        error 
+        error,
       });
       throw error;
     }
@@ -626,7 +647,7 @@ export class NexonApiClient {
     // Check cache first
     const cacheKey = GuildCacheKeys.guildBasic(oguildId, date);
     const cachedResult = this.cache.get<GuildBasic>(cacheKey);
-    
+
     if (cachedResult) {
       this.logger.info('Guild basic info cache hit', { oguildId, date });
       return cachedResult;
@@ -642,21 +663,21 @@ export class NexonApiClient {
 
       // Cache for 1 hour (guild info changes moderately)
       this.cache.set(cacheKey, result, 3600000);
-      
-      this.logger.info('Guild basic info lookup successful', { 
-        oguildId, 
+
+      this.logger.info('Guild basic info lookup successful', {
+        oguildId,
         date,
         guildName: result.guild_name,
         guildLevel: result.guild_level,
-        memberCount: result.guild_member_count 
+        memberCount: result.guild_member_count,
       });
 
       return result;
     } catch (error) {
-      this.logger.error('Guild basic info lookup failed', { 
-        oguildId, 
+      this.logger.error('Guild basic info lookup failed', {
+        oguildId,
         date,
-        error 
+        error,
       });
       throw error;
     }
@@ -665,24 +686,33 @@ export class NexonApiClient {
   /**
    * Search for guilds with fuzzy matching
    */
-  async searchGuilds(searchTerm: string, worldName: string, limit: number = 10): Promise<Array<{
-    guildName: string;
-    guildId: string;
-    matchScore: number;
-    guildInfo?: GuildBasic;
-  }>> {
+  async searchGuilds(
+    searchTerm: string,
+    worldName: string,
+    limit: number = 10
+  ): Promise<
+    Array<{
+      guildName: string;
+      guildId: string;
+      matchScore: number;
+      guildInfo?: GuildBasic;
+    }>
+  > {
     const sanitizedSearchTerm = sanitizeGuildName(searchTerm);
     const sanitizedWorldName = sanitizeWorldName(worldName);
-    
+
     validateGuildName(sanitizedSearchTerm);
     validateWorldName(sanitizedWorldName);
 
     // Check cache first
     const cacheKey = GuildCacheKeys.guildSearch(sanitizedSearchTerm, sanitizedWorldName);
     const cachedResult = this.cache.get<any[]>(cacheKey);
-    
+
     if (cachedResult) {
-      this.logger.info('Guild search cache hit', { searchTerm: sanitizedSearchTerm, worldName: sanitizedWorldName });
+      this.logger.info('Guild search cache hit', {
+        searchTerm: sanitizedSearchTerm,
+        worldName: sanitizedWorldName,
+      });
       return cachedResult.slice(0, limit);
     }
 
@@ -701,14 +731,17 @@ export class NexonApiClient {
         try {
           const result = await this.getGuildId(variation, sanitizedWorldName);
           const guildInfo = await this.getGuildBasic(result.oguild_id);
-          
-          const matchScore = calculateFuzzyScore(sanitizedSearchTerm, guildInfo.guild_name || variation);
-          
+
+          const matchScore = calculateFuzzyScore(
+            sanitizedSearchTerm,
+            guildInfo.guild_name || variation
+          );
+
           searchResults.push({
             guildName: guildInfo.guild_name || variation,
             guildId: result.oguild_id,
             matchScore,
-            guildInfo
+            guildInfo,
           });
         } catch (error) {
           // Guild not found with this variation, continue
@@ -718,27 +751,27 @@ export class NexonApiClient {
 
       // Sort by match score and remove duplicates
       const uniqueResults = searchResults
-        .filter((result, index, array) => 
-          array.findIndex(r => r.guildId === result.guildId) === index
+        .filter(
+          (result, index, array) => array.findIndex((r) => r.guildId === result.guildId) === index
         )
         .sort((a, b) => b.matchScore - a.matchScore)
         .slice(0, limit);
 
       // Cache for 30 minutes
       this.cache.set(cacheKey, uniqueResults, 1800000);
-      
-      this.logger.info('Guild search completed', { 
-        searchTerm: sanitizedSearchTerm, 
+
+      this.logger.info('Guild search completed', {
+        searchTerm: sanitizedSearchTerm,
         worldName: sanitizedWorldName,
-        resultsCount: uniqueResults.length 
+        resultsCount: uniqueResults.length,
       });
 
       return uniqueResults;
     } catch (error) {
-      this.logger.error('Guild search failed', { 
-        searchTerm: sanitizedSearchTerm, 
+      this.logger.error('Guild search failed', {
+        searchTerm: sanitizedSearchTerm,
         worldName: sanitizedWorldName,
-        error 
+        error,
       });
       return [];
     }
@@ -751,10 +784,10 @@ export class NexonApiClient {
     try {
       const { oguild_id } = await this.getGuildId(guildName, worldName);
       const guildBasic = await this.getGuildBasic(oguild_id, date);
-      
+
       // Calculate guild metrics
       const guildScore = calculateGuildScore(guildBasic);
-      
+
       // Get guild ranking position (if available)
       let rankingPosition: number | null = null;
       try {
@@ -774,25 +807,25 @@ export class NexonApiClient {
           memberCount: guildBasic.guild_member_count,
           rankingPosition,
         },
-        recommendations: this.generateGuildRecommendations(guildBasic, rankingPosition)
+        recommendations: this.generateGuildRecommendations(guildBasic, rankingPosition),
       };
 
-      this.logger.info('Guild analysis completed', { 
-        guildName, 
+      this.logger.info('Guild analysis completed', {
+        guildName,
         worldName,
         guildScore,
-        rankingPosition 
+        rankingPosition,
       });
 
       return {
         guildId: oguild_id,
-        ...analysis
+        ...analysis,
       };
     } catch (error) {
-      this.logger.error('Guild analysis failed', { 
-        guildName, 
+      this.logger.error('Guild analysis failed', {
+        guildName,
         worldName,
-        error 
+        error,
       });
       throw error;
     }
@@ -803,30 +836,30 @@ export class NexonApiClient {
    */
   private generateGuildRecommendations(guildBasic: any, rankingPosition: number | null): string[] {
     const recommendations: string[] = [];
-    
+
     const level = guildBasic.guild_level || 0;
     const memberCount = guildBasic.guild_member_count || 0;
-    
+
     // Level recommendations
     if (level < 10) {
       recommendations.push('길드 레벨을 올려 더 많은 혜택을 받을 수 있습니다.');
     }
-    
+
     // Member count recommendations
     if (memberCount < 50) {
       recommendations.push('더 많은 멤버를 모집하여 길드 활동을 활성화할 수 있습니다.');
     }
-    
+
     // Ranking recommendations
     if (rankingPosition && rankingPosition > 100) {
       recommendations.push('길드 랭킹 향상을 위해 멤버들의 활동을 늘려보세요.');
     }
-    
+
     // General recommendations
     if (recommendations.length === 0) {
       recommendations.push('훌륭한 길드입니다! 현재 상태를 유지하세요.');
     }
-    
+
     return recommendations;
   }
 
@@ -853,7 +886,7 @@ export class NexonApiClient {
     // Check cache first
     const cacheKey = RankingCacheKeys.overall(worldName, worldType, className, page, date);
     const cachedResult = this.cache.get<OverallRanking>(cacheKey);
-    
+
     if (cachedResult) {
       this.logger.info('Overall ranking cache hit', { worldName, page, className });
       return cachedResult;
@@ -872,21 +905,21 @@ export class NexonApiClient {
 
       // Cache for 30 minutes (rankings update periodically)
       this.cache.set(cacheKey, result, 1800000);
-      
-      this.logger.info('Overall ranking retrieved successfully', { 
-        worldName, 
-        page, 
+
+      this.logger.info('Overall ranking retrieved successfully', {
+        worldName,
+        page,
         className,
-        rankingCount: result.ranking?.length || 0
+        rankingCount: result.ranking?.length || 0,
       });
 
       return result;
     } catch (error) {
-      this.logger.error('Overall ranking retrieval failed', { 
-        worldName, 
-        page, 
+      this.logger.error('Overall ranking retrieval failed', {
+        worldName,
+        page,
         className,
-        error 
+        error,
       });
       throw error;
     }
@@ -926,7 +959,7 @@ export class NexonApiClient {
     // Check cache first
     const cacheKey = RankingCacheKeys.guild(worldName, rankingType, page, date);
     const cachedResult = this.cache.get<GuildRanking>(cacheKey);
-    
+
     if (cachedResult) {
       this.logger.info('Guild ranking cache hit', { worldName, rankingType, page });
       return cachedResult;
@@ -935,7 +968,7 @@ export class NexonApiClient {
     try {
       const params: Record<string, any> = {
         world_name: worldName,
-        ranking_type: rankingType
+        ranking_type: rankingType,
       };
       if (guildName) params.guild_name = guildName;
       if (page) params.page = page;
@@ -945,21 +978,21 @@ export class NexonApiClient {
 
       // Cache for 30 minutes
       this.cache.set(cacheKey, result, 1800000);
-      
-      this.logger.info('Guild ranking retrieved successfully', { 
-        worldName, 
-        rankingType, 
+
+      this.logger.info('Guild ranking retrieved successfully', {
+        worldName,
+        rankingType,
         page,
-        rankingCount: result.ranking?.length || 0
+        rankingCount: result.ranking?.length || 0,
       });
 
       return result;
     } catch (error) {
-      this.logger.error('Guild ranking retrieval failed', { 
-        worldName, 
-        rankingType, 
+      this.logger.error('Guild ranking retrieval failed', {
+        worldName,
+        rankingType,
         page,
-        error 
+        error,
       });
       throw error;
     }
@@ -972,16 +1005,17 @@ export class NexonApiClient {
       const { ocid } = await this.getCharacterOcid(characterName);
 
       // Then fetch all character information in parallel
-      const [basic, stat, hyperStat, propensity, ability, equipment, cashItems, beautyEquipment] = await Promise.all([
-        this.getCharacterBasic(ocid, date),
-        this.getCharacterStat(ocid, date),
-        this.getCharacterHyperStat(ocid, date),
-        this.getCharacterPropensity(ocid, date),
-        this.getCharacterAbility(ocid, date),
-        this.getCharacterItemEquipment(ocid, date),
-        this.getCharacterCashItemEquipment(ocid, date).catch(() => null), // Optional
-        this.getCharacterBeautyEquipment(ocid, date).catch(() => null), // Optional
-      ]);
+      const [basic, stat, hyperStat, propensity, ability, equipment, cashItems, beautyEquipment] =
+        await Promise.all([
+          this.getCharacterBasic(ocid, date),
+          this.getCharacterStat(ocid, date),
+          this.getCharacterHyperStat(ocid, date),
+          this.getCharacterPropensity(ocid, date),
+          this.getCharacterAbility(ocid, date),
+          this.getCharacterItemEquipment(ocid, date),
+          this.getCharacterCashItemEquipment(ocid, date).catch(() => null), // Optional
+          this.getCharacterBeautyEquipment(ocid, date).catch(() => null), // Optional
+        ]);
 
       return {
         ocid,
@@ -1009,15 +1043,15 @@ export class NexonApiClient {
   async getCharacterAnalysis(characterName: string, date?: string) {
     try {
       const fullInfo = await this.getCharacterFullInfo(characterName, date);
-      
+
       // Analyze equipment
       const equipmentAnalysis = {
         setEffects: analyzeSetEffects(fullInfo.equipment?.item_equipment || []),
-        enhancementScores: (fullInfo.equipment?.item_equipment || []).map(item => ({
+        enhancementScores: (fullInfo.equipment?.item_equipment || []).map((item) => ({
           itemName: item.item_name,
           slot: item.item_equipment_part,
           enhancement: analyzeEquipmentPiece(item),
-          score: calculateEnhancementScore(analyzeEquipmentPiece(item))
+          score: calculateEnhancementScore(analyzeEquipmentPiece(item)),
         })),
         totalCombatPower: this.calculateTotalCombatPower(fullInfo.stat),
       };
@@ -1030,8 +1064,8 @@ export class NexonApiClient {
         analysis: {
           equipment: equipmentAnalysis,
           characterScore,
-          recommendations: this.generateRecommendations(fullInfo, equipmentAnalysis)
-        }
+          recommendations: this.generateRecommendations(fullInfo, equipmentAnalysis),
+        },
       };
     } catch (error) {
       this.logger.error('Error performing character analysis', {
@@ -1047,7 +1081,7 @@ export class NexonApiClient {
    */
   private calculateTotalCombatPower(statData: any): number {
     if (!statData?.final_stat) return 0;
-    
+
     const stats: Record<string, number> = {};
     statData.final_stat.forEach((stat: any) => {
       if (stat.stat_name && stat.stat_value) {
@@ -1055,7 +1089,7 @@ export class NexonApiClient {
         stats[stat.stat_name.toLowerCase().replace(/\s+/g, '_')] = isNaN(value) ? 0 : value;
       }
     });
-    
+
     return calculateCombatPower(stats);
   }
 
@@ -1064,23 +1098,26 @@ export class NexonApiClient {
    */
   private calculateCharacterScore(fullInfo: any, equipmentAnalysis: any): number {
     let score = 0;
-    
+
     // Level contribution (0-300 points)
     const level = fullInfo.basic?.character_level || 1;
     score += Math.min(level, 300);
-    
+
     // Equipment enhancement contribution (0-500 points)
-    const enhancementScore = equipmentAnalysis.enhancementScores.reduce((total: number, item: any) => total + item.score, 0);
+    const enhancementScore = equipmentAnalysis.enhancementScores.reduce(
+      (total: number, item: any) => total + item.score,
+      0
+    );
     score += Math.min(enhancementScore / 10, 500);
-    
+
     // Set effects contribution (0-200 points)
     const setEffectBonus = equipmentAnalysis.setEffects.length * 50;
     score += Math.min(setEffectBonus, 200);
-    
+
     // Combat power contribution (scaled)
     const combatPowerBonus = Math.min(equipmentAnalysis.totalCombatPower / 1000, 1000);
     score += combatPowerBonus;
-    
+
     return Math.round(score);
   }
 
@@ -1089,30 +1126,34 @@ export class NexonApiClient {
    */
   private generateRecommendations(fullInfo: any, equipmentAnalysis: any): string[] {
     const recommendations: string[] = [];
-    
+
     const level = fullInfo.basic?.character_level || 1;
-    
+
     // Level recommendations
     if (level < 200) {
       recommendations.push('레벨업을 통해 더 강한 장비를 착용할 수 있습니다.');
     }
-    
+
     // Equipment enhancement recommendations
-    const lowEnhancementItems = equipmentAnalysis.enhancementScores.filter((item: any) => item.score < 50);
+    const lowEnhancementItems = equipmentAnalysis.enhancementScores.filter(
+      (item: any) => item.score < 50
+    );
     if (lowEnhancementItems.length > 0) {
-      recommendations.push(`${lowEnhancementItems.length}개의 장비 강화가 부족합니다. 스타포스와 잠재능력 개선을 고려해보세요.`);
+      recommendations.push(
+        `${lowEnhancementItems.length}개의 장비 강화가 부족합니다. 스타포스와 잠재능력 개선을 고려해보세요.`
+      );
     }
-    
+
     // Set effect recommendations
     if (equipmentAnalysis.setEffects.length === 0) {
       recommendations.push('세트 장비를 착용하여 추가 능력치를 얻을 수 있습니다.');
     }
-    
+
     // Combat power recommendations
     if (equipmentAnalysis.totalCombatPower < 100000) {
       recommendations.push('전투력 향상을 위해 장비 업그레이드를 고려해보세요.');
     }
-    
+
     return recommendations;
   }
 
@@ -1157,7 +1198,7 @@ export class NexonApiClient {
   }
 
   // Server status and game information methods
-  
+
   /**
    * Get comprehensive server status for all worlds
    */
@@ -1174,7 +1215,7 @@ export class NexonApiClient {
   }> {
     const cacheKey = ServerCacheKeys.serverStatus(worldName);
     const cachedResult = this.cache.get<any>(cacheKey);
-    
+
     if (cachedResult) {
       this.logger.info('Server status cache hit', { worldName });
       return cachedResult;
@@ -1194,14 +1235,14 @@ export class NexonApiClient {
           // Test API availability by getting ranking data
           const ranking = await this.getOverallRanking(world, undefined, undefined, undefined, 1);
           const population = estimateWorldPopulation(ranking);
-          
+
           const worldStatus = determineServerStatus(true, maintenanceNotices, 0);
-          
+
           worldStatuses.push({
             worldName: world,
             status: worldStatus,
             population,
-            lastUpdate: formatSEADate(new Date())
+            lastUpdate: formatSEADate(new Date()),
           });
 
           if (worldStatus !== ServerStatus.ONLINE) {
@@ -1210,12 +1251,12 @@ export class NexonApiClient {
         } catch (error) {
           errorCount++;
           const worldStatus = determineServerStatus(false, maintenanceNotices, 1);
-          
+
           worldStatuses.push({
             worldName: world,
             status: worldStatus,
             population: 'unknown' as const,
-            lastUpdate: formatSEADate(new Date())
+            lastUpdate: formatSEADate(new Date()),
           });
         }
       }
@@ -1228,27 +1269,27 @@ export class NexonApiClient {
         status: overallStatus,
         worlds: worldStatuses,
         maintenance: maintenanceNotices.length > 0 ? maintenanceNotices[0] : undefined,
-        timestamp: formatSEADate(new Date())
+        timestamp: formatSEADate(new Date()),
       };
 
       // Cache for 5 minutes
       this.cache.set(cacheKey, result, 300000);
-      
-      this.logger.info('Server status check completed', { 
-        worldName, 
+
+      this.logger.info('Server status check completed', {
+        worldName,
         overallStatus,
         worldCount: worldStatuses.length,
-        errorRate 
+        errorRate,
       });
 
       return result;
     } catch (error) {
       this.logger.error('Server status check failed', { worldName, error });
-      
+
       return {
         status: ServerStatus.UNKNOWN,
         worlds: [],
-        timestamp: formatSEADate(new Date())
+        timestamp: formatSEADate(new Date()),
       };
     }
   }
@@ -1259,7 +1300,7 @@ export class NexonApiClient {
   async getNotices(noticeType?: NoticeType | string, limit: number = 10): Promise<any[]> {
     const cacheKey = ServerCacheKeys.notices(noticeType);
     const cachedResult = this.cache.get<any[]>(cacheKey);
-    
+
     if (cachedResult) {
       this.logger.info('Notices cache hit', { noticeType });
       return cachedResult.slice(0, limit);
@@ -1268,7 +1309,7 @@ export class NexonApiClient {
     try {
       // Get notices from different endpoints based on type
       let notices: any[] = [];
-      
+
       if (!noticeType || noticeType === NoticeType.GENERAL) {
         const generalNotices = await this.request<any>(ENDPOINTS.NOTICE.LIST);
         if (generalNotices.notice) {
@@ -1299,36 +1340,34 @@ export class NexonApiClient {
       }
 
       // Process and enrich notices
-      const processedNotices = notices.map(notice => ({
+      const processedNotices = notices.map((notice) => ({
         ...notice,
         noticeType: parseNoticeType(notice.title || '', notice.contents),
         formattedDate: formatSEADate(notice.date || new Date()),
         formattedContent: formatNoticeContent(notice.contents || ''),
-        maintenanceInfo: notice.contents ? extractMaintenanceTime(notice.contents) : null
+        maintenanceInfo: notice.contents ? extractMaintenanceTime(notice.contents) : null,
       }));
 
       // Filter by type if specified
       let filteredNotices = processedNotices;
       if (noticeType && noticeType !== NoticeType.GENERAL) {
-        filteredNotices = processedNotices.filter(notice => 
-          notice.noticeType === noticeType
-        );
+        filteredNotices = processedNotices.filter((notice) => notice.noticeType === noticeType);
       }
 
       // Sort by date (newest first)
-      filteredNotices.sort((a, b) => 
-        new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()
+      filteredNotices.sort(
+        (a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()
       );
 
       const result = filteredNotices.slice(0, limit);
 
       // Cache for 10 minutes
       this.cache.set(cacheKey, result, 600000);
-      
-      this.logger.info('Notices retrieved successfully', { 
-        noticeType, 
+
+      this.logger.info('Notices retrieved successfully', {
+        noticeType,
         totalCount: notices.length,
-        filteredCount: result.length 
+        filteredCount: result.length,
       });
 
       return result;
@@ -1344,7 +1383,7 @@ export class NexonApiClient {
   async getCurrentEvents(): Promise<any[]> {
     const cacheKey = ServerCacheKeys.events();
     const cachedResult = this.cache.get<any[]>(cacheKey);
-    
+
     if (cachedResult) {
       this.logger.info('Current events cache hit');
       return cachedResult;
@@ -1352,22 +1391,22 @@ export class NexonApiClient {
 
     try {
       const eventNotices = await this.getNotices(NoticeType.EVENT, 20);
-      
+
       // Filter for active events (simplified logic)
       const currentDate = convertToSEATime(new Date());
-      const activeEvents = eventNotices.filter(notice => {
+      const activeEvents = eventNotices.filter((notice) => {
         if (!notice.date) return true;
-        
+
         const noticeDate = new Date(notice.date);
         const daysDiff = (currentDate.getTime() - noticeDate.getTime()) / (1000 * 60 * 60 * 24);
-        
+
         // Consider events from last 30 days as potentially active
         return daysDiff <= 30;
       });
 
       // Cache for 30 minutes
       this.cache.set(cacheKey, activeEvents, 1800000);
-      
+
       this.logger.info('Current events retrieved', { count: activeEvents.length });
 
       return activeEvents;
@@ -1387,7 +1426,7 @@ export class NexonApiClient {
   }> {
     const cacheKey = ServerCacheKeys.maintenance();
     const cachedResult = this.cache.get<any>(cacheKey);
-    
+
     if (cachedResult) {
       this.logger.info('Maintenance schedule cache hit');
       return cachedResult;
@@ -1395,34 +1434,34 @@ export class NexonApiClient {
 
     try {
       const maintenanceNotices = await this.getNotices(NoticeType.MAINTENANCE, 20);
-      
+
       const now = convertToSEATime(new Date());
       const scheduled: any[] = [];
       const ongoing: any[] = [];
       const upcoming: any[] = [];
 
-      maintenanceNotices.forEach(notice => {
+      maintenanceNotices.forEach((notice) => {
         const maintenanceInfo = extractMaintenanceTime(notice.contents || '');
-        
+
         if (maintenanceInfo) {
           // Simplified categorization based on notice date
           const noticeDate = new Date(notice.date || now);
           const hoursDiff = (now.getTime() - noticeDate.getTime()) / (1000 * 60 * 60);
-          
+
           if (hoursDiff < 2) {
             ongoing.push({
               ...notice,
-              maintenanceInfo
+              maintenanceInfo,
             });
           } else if (hoursDiff < 0) {
             upcoming.push({
               ...notice,
-              maintenanceInfo
+              maintenanceInfo,
             });
           } else {
             scheduled.push({
               ...notice,
-              maintenanceInfo
+              maintenanceInfo,
             });
           }
         }
@@ -1432,11 +1471,11 @@ export class NexonApiClient {
 
       // Cache for 15 minutes
       this.cache.set(cacheKey, result, 900000);
-      
-      this.logger.info('Maintenance schedule retrieved', { 
+
+      this.logger.info('Maintenance schedule retrieved', {
         scheduled: scheduled.length,
         ongoing: ongoing.length,
-        upcoming: upcoming.length 
+        upcoming: upcoming.length,
       });
 
       return result;
@@ -1472,7 +1511,7 @@ export class NexonApiClient {
     // Check cache first
     const cacheKey = RankingCacheKeys.characterPosition(sanitizedName, worldName, className);
     const cachedResult = this.cache.get<any>(cacheKey);
-    
+
     if (cachedResult) {
       this.logger.info('Character position cache hit', { characterName: sanitizedName });
       return cachedResult;
@@ -1481,27 +1520,33 @@ export class NexonApiClient {
     try {
       // Search through multiple pages to find character
       for (let page = 1; page <= maxPages; page++) {
-        const ranking = await this.getOverallRanking(worldName, undefined, className, undefined, page);
-        
+        const ranking = await this.getOverallRanking(
+          worldName,
+          undefined,
+          className,
+          undefined,
+          page
+        );
+
         if (!ranking.ranking || ranking.ranking.length === 0) {
           break; // No more data
         }
 
         const result = findCharacterPosition(ranking.ranking, sanitizedName, page);
-        
+
         if (result.found) {
           const finalResult = {
             ...result,
-            searchedPages: page
+            searchedPages: page,
           };
 
           // Cache for 1 hour
           this.cache.set(cacheKey, finalResult, 3600000);
-          
-          this.logger.info('Character position found', { 
-            characterName: sanitizedName, 
+
+          this.logger.info('Character position found', {
+            characterName: sanitizedName,
             position: result.position,
-            searchedPages: page 
+            searchedPages: page,
           });
 
           return finalResult;
@@ -1510,27 +1555,27 @@ export class NexonApiClient {
 
       const notFoundResult = {
         found: false,
-        searchedPages: maxPages
+        searchedPages: maxPages,
       };
 
       // Cache negative result for 30 minutes
       this.cache.set(cacheKey, notFoundResult, 1800000);
-      
-      this.logger.info('Character position not found', { 
-        characterName: sanitizedName, 
-        searchedPages: maxPages 
+
+      this.logger.info('Character position not found', {
+        characterName: sanitizedName,
+        searchedPages: maxPages,
       });
 
       return notFoundResult;
     } catch (error) {
-      this.logger.error('Character position search failed', { 
-        characterName: sanitizedName, 
-        error 
+      this.logger.error('Character position search failed', {
+        characterName: sanitizedName,
+        error,
       });
-      
+
       return {
         found: false,
-        searchedPages: 0
+        searchedPages: 0,
       };
     }
   }
@@ -1557,7 +1602,7 @@ export class NexonApiClient {
     // Check cache first
     const cacheKey = RankingCacheKeys.guildPosition(sanitizedName, worldName, rankingType);
     const cachedResult = this.cache.get<any>(cacheKey);
-    
+
     if (cachedResult) {
       this.logger.info('Guild position cache hit', { guildName: sanitizedName });
       return cachedResult;
@@ -1567,26 +1612,26 @@ export class NexonApiClient {
       // Search through multiple pages to find guild
       for (let page = 1; page <= maxPages; page++) {
         const ranking = await this.getGuildRanking(worldName, rankingType, undefined, page);
-        
+
         if (!ranking.ranking || ranking.ranking.length === 0) {
           break; // No more data
         }
 
         const result = findGuildPosition(ranking.ranking, sanitizedName, page);
-        
+
         if (result.found) {
           const finalResult = {
             ...result,
-            searchedPages: page
+            searchedPages: page,
           };
 
           // Cache for 1 hour
           this.cache.set(cacheKey, finalResult, 3600000);
-          
-          this.logger.info('Guild position found', { 
-            guildName: sanitizedName, 
+
+          this.logger.info('Guild position found', {
+            guildName: sanitizedName,
             position: result.position,
-            searchedPages: page 
+            searchedPages: page,
           });
 
           return finalResult;
@@ -1595,27 +1640,27 @@ export class NexonApiClient {
 
       const notFoundResult = {
         found: false,
-        searchedPages: maxPages
+        searchedPages: maxPages,
       };
 
       // Cache negative result for 30 minutes
       this.cache.set(cacheKey, notFoundResult, 1800000);
-      
-      this.logger.info('Guild position not found', { 
-        guildName: sanitizedName, 
-        searchedPages: maxPages 
+
+      this.logger.info('Guild position not found', {
+        guildName: sanitizedName,
+        searchedPages: maxPages,
       });
 
       return notFoundResult;
     } catch (error) {
-      this.logger.error('Guild position search failed', { 
-        guildName: sanitizedName, 
-        error 
+      this.logger.error('Guild position search failed', {
+        guildName: sanitizedName,
+        error,
       });
-      
+
       return {
         found: false,
-        searchedPages: 0
+        searchedPages: 0,
       };
     }
   }
@@ -1640,14 +1685,24 @@ export class NexonApiClient {
       const [overallRanking, unionRanking, guildRanking] = await Promise.all([
         this.getOverallRanking(worldName, undefined, className, undefined, 1),
         this.getUnionRanking(worldName, undefined, 1).catch(() => null),
-        worldName ? this.getGuildRanking(worldName, GuildRankingType.GUILD_POWER, undefined, 1).catch(() => null) : null
+        worldName
+          ? this.getGuildRanking(worldName, GuildRankingType.GUILD_POWER, undefined, 1).catch(
+              () => null
+            )
+          : null,
       ]);
 
       // Collect data from multiple pages for better analysis
       const allCharacters = [];
       for (let page = 1; page <= pages; page++) {
         try {
-          const pageData = await this.getOverallRanking(worldName, undefined, className, undefined, page);
+          const pageData = await this.getOverallRanking(
+            worldName,
+            undefined,
+            className,
+            undefined,
+            page
+          );
           if (pageData.ranking) {
             allCharacters.push(...pageData.ranking);
           }
@@ -1657,29 +1712,29 @@ export class NexonApiClient {
       }
 
       const statistics = calculateRankingStats(allCharacters);
-      
+
       const result = {
         overall: parseRankingResponse(overallRanking, 1),
         union: unionRanking ? parseRankingResponse(unionRanking, 1) : undefined,
         guild: guildRanking ? parseRankingResponse(guildRanking, 1) : undefined,
         statistics,
         topCharacters: allCharacters.slice(0, 10),
-        topGuilds: statistics.topGuilds || []
+        topGuilds: statistics.topGuilds || [],
       };
 
-      this.logger.info('Ranking analysis completed', { 
-        worldName, 
+      this.logger.info('Ranking analysis completed', {
+        worldName,
         className,
         totalCharacters: allCharacters.length,
-        pages 
+        pages,
       });
 
       return result;
     } catch (error) {
-      this.logger.error('Ranking analysis failed', { 
-        worldName, 
+      this.logger.error('Ranking analysis failed', {
+        worldName,
         className,
-        error 
+        error,
       });
       throw error;
     }
