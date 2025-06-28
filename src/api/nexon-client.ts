@@ -59,6 +59,18 @@ import {
   formatNoticeContent,
   ServerCacheKeys
 } from '../utils/server-utils';
+import {
+  RankingType,
+  GuildRankingType,
+  validatePage,
+  validateRankingType,
+  validateGuildRankingType,
+  findCharacterPosition,
+  findGuildPosition,
+  parseRankingResponse,
+  calculateRankingStats,
+  RankingCacheKeys
+} from '../utils/ranking-utils';
 
 export class NexonApiClient {
   private client: AxiosInstance;
@@ -827,14 +839,57 @@ export class NexonApiClient {
     page?: number,
     date?: string
   ): Promise<OverallRanking> {
-    return this.request(ENDPOINTS.RANKING.OVERALL, {
-      world_name: worldName,
-      world_type: worldType,
-      class: className,
-      ocid,
-      page,
-      date,
-    });
+    // Validate inputs
+    if (worldName) {
+      validateWorldName(worldName);
+    }
+    if (page) {
+      validatePage(page);
+    }
+    if (date) {
+      validateDate(date);
+    }
+
+    // Check cache first
+    const cacheKey = RankingCacheKeys.overall(worldName, worldType, className, page, date);
+    const cachedResult = this.cache.get<OverallRanking>(cacheKey);
+    
+    if (cachedResult) {
+      this.logger.info('Overall ranking cache hit', { worldName, page, className });
+      return cachedResult;
+    }
+
+    try {
+      const params: Record<string, any> = {};
+      if (worldName) params.world_name = worldName;
+      if (worldType) params.world_type = worldType;
+      if (className) params.class = className;
+      if (ocid) params.ocid = ocid;
+      if (page) params.page = page;
+      if (date) params.date = date;
+
+      const result = await this.request<OverallRanking>(ENDPOINTS.RANKING.OVERALL, params);
+
+      // Cache for 30 minutes (rankings update periodically)
+      this.cache.set(cacheKey, result, 1800000);
+      
+      this.logger.info('Overall ranking retrieved successfully', { 
+        worldName, 
+        page, 
+        className,
+        rankingCount: result.ranking?.length || 0
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error('Overall ranking retrieval failed', { 
+        worldName, 
+        page, 
+        className,
+        error 
+      });
+      throw error;
+    }
   }
 
   async getUnionRanking(
@@ -858,13 +913,56 @@ export class NexonApiClient {
     page?: number,
     date?: string
   ): Promise<GuildRanking> {
-    return this.request(ENDPOINTS.RANKING.GUILD, {
-      world_name: worldName,
-      ranking_type: rankingType,
-      guild_name: guildName,
-      page,
-      date,
-    });
+    // Validate inputs
+    validateWorldName(worldName);
+    validateGuildRankingType(rankingType);
+    if (page) {
+      validatePage(page);
+    }
+    if (date) {
+      validateDate(date);
+    }
+
+    // Check cache first
+    const cacheKey = RankingCacheKeys.guild(worldName, rankingType, page, date);
+    const cachedResult = this.cache.get<GuildRanking>(cacheKey);
+    
+    if (cachedResult) {
+      this.logger.info('Guild ranking cache hit', { worldName, rankingType, page });
+      return cachedResult;
+    }
+
+    try {
+      const params: Record<string, any> = {
+        world_name: worldName,
+        ranking_type: rankingType
+      };
+      if (guildName) params.guild_name = guildName;
+      if (page) params.page = page;
+      if (date) params.date = date;
+
+      const result = await this.request<GuildRanking>(ENDPOINTS.RANKING.GUILD, params);
+
+      // Cache for 30 minutes
+      this.cache.set(cacheKey, result, 1800000);
+      
+      this.logger.info('Guild ranking retrieved successfully', { 
+        worldName, 
+        rankingType, 
+        page,
+        rankingCount: result.ranking?.length || 0
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error('Guild ranking retrieval failed', { 
+        worldName, 
+        rankingType, 
+        page,
+        error 
+      });
+      throw error;
+    }
   }
 
   // Convenience methods
@@ -1345,6 +1443,245 @@ export class NexonApiClient {
     } catch (error) {
       this.logger.error('Failed to get maintenance schedule', { error });
       return { scheduled: [], ongoing: [], upcoming: [] };
+    }
+  }
+
+  // Enhanced ranking methods
+
+  /**
+   * Find character's position in overall ranking
+   */
+  async findCharacterRankingPosition(
+    characterName: string,
+    worldName?: string,
+    className?: string,
+    maxPages: number = 10
+  ): Promise<{
+    found: boolean;
+    position?: number;
+    entry?: any;
+    searchedPages: number;
+  }> {
+    const sanitizedName = sanitizeCharacterName(characterName);
+    validateCharacterName(sanitizedName);
+
+    if (worldName) {
+      validateWorldName(worldName);
+    }
+
+    // Check cache first
+    const cacheKey = RankingCacheKeys.characterPosition(sanitizedName, worldName, className);
+    const cachedResult = this.cache.get<any>(cacheKey);
+    
+    if (cachedResult) {
+      this.logger.info('Character position cache hit', { characterName: sanitizedName });
+      return cachedResult;
+    }
+
+    try {
+      // Search through multiple pages to find character
+      for (let page = 1; page <= maxPages; page++) {
+        const ranking = await this.getOverallRanking(worldName, undefined, className, undefined, page);
+        
+        if (!ranking.ranking || ranking.ranking.length === 0) {
+          break; // No more data
+        }
+
+        const result = findCharacterPosition(ranking.ranking, sanitizedName, page);
+        
+        if (result.found) {
+          const finalResult = {
+            ...result,
+            searchedPages: page
+          };
+
+          // Cache for 1 hour
+          this.cache.set(cacheKey, finalResult, 3600000);
+          
+          this.logger.info('Character position found', { 
+            characterName: sanitizedName, 
+            position: result.position,
+            searchedPages: page 
+          });
+
+          return finalResult;
+        }
+      }
+
+      const notFoundResult = {
+        found: false,
+        searchedPages: maxPages
+      };
+
+      // Cache negative result for 30 minutes
+      this.cache.set(cacheKey, notFoundResult, 1800000);
+      
+      this.logger.info('Character position not found', { 
+        characterName: sanitizedName, 
+        searchedPages: maxPages 
+      });
+
+      return notFoundResult;
+    } catch (error) {
+      this.logger.error('Character position search failed', { 
+        characterName: sanitizedName, 
+        error 
+      });
+      
+      return {
+        found: false,
+        searchedPages: 0
+      };
+    }
+  }
+
+  /**
+   * Find guild's position in guild ranking
+   */
+  async findGuildRankingPosition(
+    guildName: string,
+    worldName: string,
+    rankingType: number = GuildRankingType.GUILD_POWER,
+    maxPages: number = 5
+  ): Promise<{
+    found: boolean;
+    position?: number;
+    entry?: any;
+    searchedPages: number;
+  }> {
+    const sanitizedName = sanitizeGuildName(guildName);
+    validateGuildName(sanitizedName);
+    validateWorldName(worldName);
+    validateGuildRankingType(rankingType);
+
+    // Check cache first
+    const cacheKey = RankingCacheKeys.guildPosition(sanitizedName, worldName, rankingType);
+    const cachedResult = this.cache.get<any>(cacheKey);
+    
+    if (cachedResult) {
+      this.logger.info('Guild position cache hit', { guildName: sanitizedName });
+      return cachedResult;
+    }
+
+    try {
+      // Search through multiple pages to find guild
+      for (let page = 1; page <= maxPages; page++) {
+        const ranking = await this.getGuildRanking(worldName, rankingType, undefined, page);
+        
+        if (!ranking.ranking || ranking.ranking.length === 0) {
+          break; // No more data
+        }
+
+        const result = findGuildPosition(ranking.ranking, sanitizedName, page);
+        
+        if (result.found) {
+          const finalResult = {
+            ...result,
+            searchedPages: page
+          };
+
+          // Cache for 1 hour
+          this.cache.set(cacheKey, finalResult, 3600000);
+          
+          this.logger.info('Guild position found', { 
+            guildName: sanitizedName, 
+            position: result.position,
+            searchedPages: page 
+          });
+
+          return finalResult;
+        }
+      }
+
+      const notFoundResult = {
+        found: false,
+        searchedPages: maxPages
+      };
+
+      // Cache negative result for 30 minutes
+      this.cache.set(cacheKey, notFoundResult, 1800000);
+      
+      this.logger.info('Guild position not found', { 
+        guildName: sanitizedName, 
+        searchedPages: maxPages 
+      });
+
+      return notFoundResult;
+    } catch (error) {
+      this.logger.error('Guild position search failed', { 
+        guildName: sanitizedName, 
+        error 
+      });
+      
+      return {
+        found: false,
+        searchedPages: 0
+      };
+    }
+  }
+
+  /**
+   * Get comprehensive ranking analysis
+   */
+  async getRankingAnalysis(
+    worldName?: string,
+    className?: string,
+    pages: number = 3
+  ): Promise<{
+    overall: any;
+    union?: any;
+    guild?: any;
+    statistics: any;
+    topCharacters: any[];
+    topGuilds: any[];
+  }> {
+    try {
+      // Get multiple ranking types
+      const [overallRanking, unionRanking, guildRanking] = await Promise.all([
+        this.getOverallRanking(worldName, undefined, className, undefined, 1),
+        this.getUnionRanking(worldName, undefined, 1).catch(() => null),
+        worldName ? this.getGuildRanking(worldName, GuildRankingType.GUILD_POWER, undefined, 1).catch(() => null) : null
+      ]);
+
+      // Collect data from multiple pages for better analysis
+      const allCharacters = [];
+      for (let page = 1; page <= pages; page++) {
+        try {
+          const pageData = await this.getOverallRanking(worldName, undefined, className, undefined, page);
+          if (pageData.ranking) {
+            allCharacters.push(...pageData.ranking);
+          }
+        } catch (error) {
+          break;
+        }
+      }
+
+      const statistics = calculateRankingStats(allCharacters);
+      
+      const result = {
+        overall: parseRankingResponse(overallRanking, 1),
+        union: unionRanking ? parseRankingResponse(unionRanking, 1) : undefined,
+        guild: guildRanking ? parseRankingResponse(guildRanking, 1) : undefined,
+        statistics,
+        topCharacters: allCharacters.slice(0, 10),
+        topGuilds: statistics.topGuilds || []
+      };
+
+      this.logger.info('Ranking analysis completed', { 
+        worldName, 
+        className,
+        totalCharacters: allCharacters.length,
+        pages 
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error('Ranking analysis failed', { 
+        worldName, 
+        className,
+        error 
+      });
+      throw error;
     }
   }
 }
