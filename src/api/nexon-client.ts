@@ -21,7 +21,7 @@ import {
   GuildRanking,
   ApiError,
 } from './types';
-import { API_CONFIG, ENDPOINTS, HEADERS, HTTP_STATUS, ERROR_MESSAGES, RATE_LIMIT } from './constants';
+import { API_CONFIG, ENDPOINTS, HEADERS, HTTP_STATUS, ERROR_MESSAGES, RATE_LIMIT, WORLDS } from './constants';
 import { MemoryCache, defaultCache } from '../utils/cache';
 import { 
   validateCharacterName, 
@@ -47,6 +47,18 @@ import {
   calculateGuildScore,
   GuildCacheKeys
 } from '../utils/guild-utils';
+import {
+  ServerStatus,
+  NoticeType,
+  convertToSEATime,
+  formatSEADate,
+  parseNoticeType,
+  extractMaintenanceTime,
+  determineServerStatus,
+  estimateWorldPopulation,
+  formatNoticeContent,
+  ServerCacheKeys
+} from '../utils/server-utils';
 
 export class NexonApiClient {
   private client: AxiosInstance;
@@ -1043,6 +1055,296 @@ export class NexonApiClient {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
       };
+    }
+  }
+
+  // Server status and game information methods
+  
+  /**
+   * Get comprehensive server status for all worlds
+   */
+  async getServerStatus(worldName?: string): Promise<{
+    status: ServerStatus;
+    worlds: Array<{
+      worldName: string;
+      status: ServerStatus;
+      population: 'high' | 'medium' | 'low' | 'unknown';
+      lastUpdate: string;
+    }>;
+    maintenance?: any;
+    timestamp: string;
+  }> {
+    const cacheKey = ServerCacheKeys.serverStatus(worldName);
+    const cachedResult = this.cache.get<any>(cacheKey);
+    
+    if (cachedResult) {
+      this.logger.info('Server status cache hit', { worldName });
+      return cachedResult;
+    }
+
+    try {
+      const worlds = worldName ? [worldName] : WORLDS.slice();
+      const worldStatuses = [];
+      let overallStatus = ServerStatus.ONLINE;
+      let errorCount = 0;
+
+      // Check maintenance notices
+      const maintenanceNotices = await this.getNotices(NoticeType.MAINTENANCE).catch(() => []);
+
+      for (const world of worlds) {
+        try {
+          // Test API availability by getting ranking data
+          const ranking = await this.getOverallRanking(world, undefined, undefined, undefined, 1);
+          const population = estimateWorldPopulation(ranking);
+          
+          const worldStatus = determineServerStatus(true, maintenanceNotices, 0);
+          
+          worldStatuses.push({
+            worldName: world,
+            status: worldStatus,
+            population,
+            lastUpdate: formatSEADate(new Date())
+          });
+
+          if (worldStatus !== ServerStatus.ONLINE) {
+            errorCount++;
+          }
+        } catch (error) {
+          errorCount++;
+          const worldStatus = determineServerStatus(false, maintenanceNotices, 1);
+          
+          worldStatuses.push({
+            worldName: world,
+            status: worldStatus,
+            population: 'unknown' as const,
+            lastUpdate: formatSEADate(new Date())
+          });
+        }
+      }
+
+      // Determine overall status
+      const errorRate = errorCount / worlds.length;
+      overallStatus = determineServerStatus(errorRate < 1, maintenanceNotices, errorRate);
+
+      const result = {
+        status: overallStatus,
+        worlds: worldStatuses,
+        maintenance: maintenanceNotices.length > 0 ? maintenanceNotices[0] : undefined,
+        timestamp: formatSEADate(new Date())
+      };
+
+      // Cache for 5 minutes
+      this.cache.set(cacheKey, result, 300000);
+      
+      this.logger.info('Server status check completed', { 
+        worldName, 
+        overallStatus,
+        worldCount: worldStatuses.length,
+        errorRate 
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error('Server status check failed', { worldName, error });
+      
+      return {
+        status: ServerStatus.UNKNOWN,
+        worlds: [],
+        timestamp: formatSEADate(new Date())
+      };
+    }
+  }
+
+  /**
+   * Get game notices by type
+   */
+  async getNotices(noticeType?: NoticeType | string, limit: number = 10): Promise<any[]> {
+    const cacheKey = ServerCacheKeys.notices(noticeType);
+    const cachedResult = this.cache.get<any[]>(cacheKey);
+    
+    if (cachedResult) {
+      this.logger.info('Notices cache hit', { noticeType });
+      return cachedResult.slice(0, limit);
+    }
+
+    try {
+      // Get notices from different endpoints based on type
+      let notices: any[] = [];
+      
+      if (!noticeType || noticeType === NoticeType.GENERAL) {
+        const generalNotices = await this.request<any>(ENDPOINTS.NOTICE.LIST);
+        if (generalNotices.notice) {
+          notices = notices.concat(generalNotices.notice);
+        }
+      }
+
+      if (!noticeType || noticeType === NoticeType.EVENT) {
+        try {
+          const eventNotices = await this.request<any>(ENDPOINTS.NOTICE.EVENT);
+          if (eventNotices.notice) {
+            notices = notices.concat(eventNotices.notice);
+          }
+        } catch (error) {
+          this.logger.debug('Event notices not available', { error });
+        }
+      }
+
+      if (!noticeType || noticeType === NoticeType.CASHSHOP) {
+        try {
+          const cashNotices = await this.request<any>(ENDPOINTS.NOTICE.CASHSHOP);
+          if (cashNotices.notice) {
+            notices = notices.concat(cashNotices.notice);
+          }
+        } catch (error) {
+          this.logger.debug('Cash shop notices not available', { error });
+        }
+      }
+
+      // Process and enrich notices
+      const processedNotices = notices.map(notice => ({
+        ...notice,
+        noticeType: parseNoticeType(notice.title || '', notice.contents),
+        formattedDate: formatSEADate(notice.date || new Date()),
+        formattedContent: formatNoticeContent(notice.contents || ''),
+        maintenanceInfo: notice.contents ? extractMaintenanceTime(notice.contents) : null
+      }));
+
+      // Filter by type if specified
+      let filteredNotices = processedNotices;
+      if (noticeType && noticeType !== NoticeType.GENERAL) {
+        filteredNotices = processedNotices.filter(notice => 
+          notice.noticeType === noticeType
+        );
+      }
+
+      // Sort by date (newest first)
+      filteredNotices.sort((a, b) => 
+        new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()
+      );
+
+      const result = filteredNotices.slice(0, limit);
+
+      // Cache for 10 minutes
+      this.cache.set(cacheKey, result, 600000);
+      
+      this.logger.info('Notices retrieved successfully', { 
+        noticeType, 
+        totalCount: notices.length,
+        filteredCount: result.length 
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to get notices', { noticeType, error });
+      return [];
+    }
+  }
+
+  /**
+   * Get current events and promotions
+   */
+  async getCurrentEvents(): Promise<any[]> {
+    const cacheKey = ServerCacheKeys.events();
+    const cachedResult = this.cache.get<any[]>(cacheKey);
+    
+    if (cachedResult) {
+      this.logger.info('Current events cache hit');
+      return cachedResult;
+    }
+
+    try {
+      const eventNotices = await this.getNotices(NoticeType.EVENT, 20);
+      
+      // Filter for active events (simplified logic)
+      const currentDate = convertToSEATime(new Date());
+      const activeEvents = eventNotices.filter(notice => {
+        if (!notice.date) return true;
+        
+        const noticeDate = new Date(notice.date);
+        const daysDiff = (currentDate.getTime() - noticeDate.getTime()) / (1000 * 60 * 60 * 24);
+        
+        // Consider events from last 30 days as potentially active
+        return daysDiff <= 30;
+      });
+
+      // Cache for 30 minutes
+      this.cache.set(cacheKey, activeEvents, 1800000);
+      
+      this.logger.info('Current events retrieved', { count: activeEvents.length });
+
+      return activeEvents;
+    } catch (error) {
+      this.logger.error('Failed to get current events', { error });
+      return [];
+    }
+  }
+
+  /**
+   * Get maintenance schedule
+   */
+  async getMaintenanceSchedule(): Promise<{
+    scheduled: any[];
+    ongoing: any[];
+    upcoming: any[];
+  }> {
+    const cacheKey = ServerCacheKeys.maintenance();
+    const cachedResult = this.cache.get<any>(cacheKey);
+    
+    if (cachedResult) {
+      this.logger.info('Maintenance schedule cache hit');
+      return cachedResult;
+    }
+
+    try {
+      const maintenanceNotices = await this.getNotices(NoticeType.MAINTENANCE, 20);
+      
+      const now = convertToSEATime(new Date());
+      const scheduled: any[] = [];
+      const ongoing: any[] = [];
+      const upcoming: any[] = [];
+
+      maintenanceNotices.forEach(notice => {
+        const maintenanceInfo = extractMaintenanceTime(notice.contents || '');
+        
+        if (maintenanceInfo) {
+          // Simplified categorization based on notice date
+          const noticeDate = new Date(notice.date || now);
+          const hoursDiff = (now.getTime() - noticeDate.getTime()) / (1000 * 60 * 60);
+          
+          if (hoursDiff < 2) {
+            ongoing.push({
+              ...notice,
+              maintenanceInfo
+            });
+          } else if (hoursDiff < 0) {
+            upcoming.push({
+              ...notice,
+              maintenanceInfo
+            });
+          } else {
+            scheduled.push({
+              ...notice,
+              maintenanceInfo
+            });
+          }
+        }
+      });
+
+      const result = { scheduled, ongoing, upcoming };
+
+      // Cache for 15 minutes
+      this.cache.set(cacheKey, result, 900000);
+      
+      this.logger.info('Maintenance schedule retrieved', { 
+        scheduled: scheduled.length,
+        ongoing: ongoing.length,
+        upcoming: upcoming.length 
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to get maintenance schedule', { error });
+      return { scheduled: [], ongoing: [], upcoming: [] };
     }
   }
 }
