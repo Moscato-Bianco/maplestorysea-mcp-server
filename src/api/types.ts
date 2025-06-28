@@ -8,6 +8,9 @@ export interface BaseApiResponse {
   count?: number;
 }
 
+// Import MemoryCache type
+import type { MemoryCache } from '../utils/cache';
+
 export interface ApiError {
   error: {
     name: string;
@@ -430,6 +433,7 @@ export interface ApiClientConfig {
   timeout?: number;
   retryAttempts?: number;
   retryDelay?: number;
+  cache?: MemoryCache;
 }
 
 export interface PaginationParams {

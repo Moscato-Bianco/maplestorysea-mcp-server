@@ -22,6 +22,16 @@ import {
   ApiError,
 } from './types';
 import { API_CONFIG, ENDPOINTS, HEADERS, HTTP_STATUS, ERROR_MESSAGES, RATE_LIMIT } from './constants';
+import { MemoryCache, defaultCache } from '../utils/cache';
+import { 
+  validateCharacterName, 
+  validateWorldName, 
+  validateOcid, 
+  validateDate,
+  sanitizeCharacterName,
+  sanitizeWorldName,
+  ValidationError 
+} from '../utils/validation';
 
 export class NexonApiClient {
   private client: AxiosInstance;
@@ -29,9 +39,11 @@ export class NexonApiClient {
   private apiKey: string;
   private requestQueue: Array<{ resolve: () => void; timestamp: number }> = [];
   private isProcessingQueue = false;
+  private cache: MemoryCache;
 
   constructor(config: ApiClientConfig) {
     this.apiKey = config.apiKey;
+    this.cache = config.cache || defaultCache;
 
     // Check if in MCP mode (no port specified)
     const isMcpMode = !process.env.MCP_PORT && !process.argv.includes('--port');
@@ -231,11 +243,93 @@ export class NexonApiClient {
 
   // Character API methods
   async getCharacterOcid(characterName: string): Promise<{ ocid: string }> {
-    return this.request(ENDPOINTS.CHARACTER.OCID, { character_name: characterName });
+    // Validate and sanitize input
+    const sanitizedName = sanitizeCharacterName(characterName);
+    validateCharacterName(sanitizedName);
+
+    // Check cache first
+    const cacheKey = MemoryCache.generateOcidCacheKey(sanitizedName);
+    const cachedResult = this.cache.get<{ ocid: string }>(cacheKey);
+    
+    if (cachedResult) {
+      this.logger.info('OCID lookup cache hit', { characterName: sanitizedName });
+      return cachedResult;
+    }
+
+    try {
+      const result = await this.request<{ ocid: string }>(ENDPOINTS.CHARACTER.OCID, { 
+        character_name: sanitizedName 
+      });
+
+      // Validate OCID before caching
+      validateOcid(result.ocid);
+
+      // Cache for 1 hour (OCID rarely changes)
+      this.cache.set(cacheKey, result, 3600000);
+      
+      this.logger.info('OCID lookup successful', { 
+        characterName: sanitizedName, 
+        ocid: result.ocid 
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error('OCID lookup failed', { 
+        characterName: sanitizedName, 
+        error 
+      });
+      throw error;
+    }
   }
 
   async getCharacterBasic(ocid: string, date?: string): Promise<CharacterBasic> {
-    return this.request(ENDPOINTS.CHARACTER.BASIC, { ocid, date });
+    // Validate inputs
+    validateOcid(ocid);
+    if (date) {
+      validateDate(date);
+    }
+
+    // Check cache first
+    const cacheKey = MemoryCache.generateCharacterBasicCacheKey(ocid, date);
+    const cachedResult = this.cache.get<CharacterBasic>(cacheKey);
+    
+    if (cachedResult) {
+      this.logger.info('Character basic info cache hit', { ocid, date });
+      return cachedResult;
+    }
+
+    try {
+      const params: Record<string, any> = { ocid };
+      if (date) {
+        params.date = date;
+      }
+
+      const result = await this.request<CharacterBasic>(ENDPOINTS.CHARACTER.BASIC, params);
+
+      // Validate world name in response
+      if (result.world_name) {
+        validateWorldName(result.world_name);
+      }
+
+      // Cache for 30 minutes (character info changes less frequently)
+      this.cache.set(cacheKey, result, 1800000);
+      
+      this.logger.info('Character basic info lookup successful', { 
+        ocid, 
+        date,
+        characterName: result.character_name,
+        world: result.world_name 
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error('Character basic info lookup failed', { 
+        ocid, 
+        date,
+        error 
+      });
+      throw error;
+    }
   }
 
   async getCharacterStat(ocid: string, date?: string): Promise<CharacterStat> {
