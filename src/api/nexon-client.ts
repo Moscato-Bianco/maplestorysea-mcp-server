@@ -32,6 +32,12 @@ import {
   sanitizeWorldName,
   ValidationError 
 } from '../utils/validation';
+import { 
+  analyzeSetEffects, 
+  analyzeEquipmentPiece, 
+  calculateCombatPower,
+  calculateEnhancementScore 
+} from '../utils/equipment-analyzer';
 
 export class NexonApiClient {
   private client: AxiosInstance;
@@ -333,7 +339,47 @@ export class NexonApiClient {
   }
 
   async getCharacterStat(ocid: string, date?: string): Promise<CharacterStat> {
-    return this.request(ENDPOINTS.CHARACTER.STAT, { ocid, date });
+    // Validate inputs
+    validateOcid(ocid);
+    if (date) {
+      validateDate(date);
+    }
+
+    // Check cache first
+    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.STAT, { ocid, date: date || 'latest' });
+    const cachedResult = this.cache.get<CharacterStat>(cacheKey);
+    
+    if (cachedResult) {
+      this.logger.info('Character stat cache hit', { ocid, date });
+      return cachedResult;
+    }
+
+    try {
+      const params: Record<string, any> = { ocid };
+      if (date) {
+        params.date = date;
+      }
+
+      const result = await this.request<CharacterStat>(ENDPOINTS.CHARACTER.STAT, params);
+
+      // Cache for 15 minutes (stats can change more frequently)
+      this.cache.set(cacheKey, result, 900000);
+      
+      this.logger.info('Character stat lookup successful', { 
+        ocid, 
+        date,
+        characterClass: result.character_class
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error('Character stat lookup failed', { 
+        ocid, 
+        date,
+        error 
+      });
+      throw error;
+    }
   }
 
   async getCharacterHyperStat(ocid: string, date?: string): Promise<CharacterHyperStat> {
@@ -349,7 +395,133 @@ export class NexonApiClient {
   }
 
   async getCharacterItemEquipment(ocid: string, date?: string): Promise<ItemEquipment> {
-    return this.request(ENDPOINTS.CHARACTER.ITEM_EQUIPMENT, { ocid, date });
+    // Validate inputs
+    validateOcid(ocid);
+    if (date) {
+      validateDate(date);
+    }
+
+    // Check cache first
+    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.ITEM_EQUIPMENT, { ocid, date: date || 'latest' });
+    const cachedResult = this.cache.get<ItemEquipment>(cacheKey);
+    
+    if (cachedResult) {
+      this.logger.info('Character equipment cache hit', { ocid, date });
+      return cachedResult;
+    }
+
+    try {
+      const params: Record<string, any> = { ocid };
+      if (date) {
+        params.date = date;
+      }
+
+      const result = await this.request<ItemEquipment>(ENDPOINTS.CHARACTER.ITEM_EQUIPMENT, params);
+
+      // Cache for 20 minutes (equipment changes less frequently)
+      this.cache.set(cacheKey, result, 1200000);
+      
+      this.logger.info('Character equipment lookup successful', { 
+        ocid, 
+        date,
+        equipmentCount: result.item_equipment?.length || 0
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error('Character equipment lookup failed', { 
+        ocid, 
+        date,
+        error 
+      });
+      throw error;
+    }
+  }
+
+  async getCharacterCashItemEquipment(ocid: string, date?: string): Promise<any> {
+    // Validate inputs
+    validateOcid(ocid);
+    if (date) {
+      validateDate(date);
+    }
+
+    // Check cache first
+    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.CASHITEM_EQUIPMENT, { ocid, date: date || 'latest' });
+    const cachedResult = this.cache.get<any>(cacheKey);
+    
+    if (cachedResult) {
+      this.logger.info('Character cash item cache hit', { ocid, date });
+      return cachedResult;
+    }
+
+    try {
+      const params: Record<string, any> = { ocid };
+      if (date) {
+        params.date = date;
+      }
+
+      const result = await this.request<any>(ENDPOINTS.CHARACTER.CASHITEM_EQUIPMENT, params);
+
+      // Cache for 30 minutes (cash items change less frequently)
+      this.cache.set(cacheKey, result, 1800000);
+      
+      this.logger.info('Character cash item lookup successful', { 
+        ocid, 
+        date
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error('Character cash item lookup failed', { 
+        ocid, 
+        date,
+        error 
+      });
+      throw error;
+    }
+  }
+
+  async getCharacterBeautyEquipment(ocid: string, date?: string): Promise<any> {
+    // Validate inputs
+    validateOcid(ocid);
+    if (date) {
+      validateDate(date);
+    }
+
+    // Check cache first
+    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.BEAUTY_EQUIPMENT, { ocid, date: date || 'latest' });
+    const cachedResult = this.cache.get<any>(cacheKey);
+    
+    if (cachedResult) {
+      this.logger.info('Character beauty equipment cache hit', { ocid, date });
+      return cachedResult;
+    }
+
+    try {
+      const params: Record<string, any> = { ocid };
+      if (date) {
+        params.date = date;
+      }
+
+      const result = await this.request<any>(ENDPOINTS.CHARACTER.BEAUTY_EQUIPMENT, params);
+
+      // Cache for 1 hour (beauty equipment rarely changes)
+      this.cache.set(cacheKey, result, 3600000);
+      
+      this.logger.info('Character beauty equipment lookup successful', { 
+        ocid, 
+        date
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error('Character beauty equipment lookup failed', { 
+        ocid, 
+        date,
+        error 
+      });
+      throw error;
+    }
   }
 
   // Union API methods
@@ -429,13 +601,15 @@ export class NexonApiClient {
       const { ocid } = await this.getCharacterOcid(characterName);
 
       // Then fetch all character information in parallel
-      const [basic, stat, hyperStat, propensity, ability, equipment] = await Promise.all([
+      const [basic, stat, hyperStat, propensity, ability, equipment, cashItems, beautyEquipment] = await Promise.all([
         this.getCharacterBasic(ocid, date),
         this.getCharacterStat(ocid, date),
         this.getCharacterHyperStat(ocid, date),
         this.getCharacterPropensity(ocid, date),
         this.getCharacterAbility(ocid, date),
         this.getCharacterItemEquipment(ocid, date),
+        this.getCharacterCashItemEquipment(ocid, date).catch(() => null), // Optional
+        this.getCharacterBeautyEquipment(ocid, date).catch(() => null), // Optional
       ]);
 
       return {
@@ -446,6 +620,8 @@ export class NexonApiClient {
         propensity,
         ability,
         equipment,
+        cashItems,
+        beautyEquipment,
       };
     } catch (error) {
       this.logger.error('Error fetching character full info', {
@@ -454,6 +630,119 @@ export class NexonApiClient {
       });
       throw error;
     }
+  }
+
+  /**
+   * Get comprehensive character analysis including equipment stats and set effects
+   */
+  async getCharacterAnalysis(characterName: string, date?: string) {
+    try {
+      const fullInfo = await this.getCharacterFullInfo(characterName, date);
+      
+      // Analyze equipment
+      const equipmentAnalysis = {
+        setEffects: analyzeSetEffects(fullInfo.equipment?.item_equipment || []),
+        enhancementScores: (fullInfo.equipment?.item_equipment || []).map(item => ({
+          itemName: item.item_name,
+          slot: item.item_equipment_part,
+          enhancement: analyzeEquipmentPiece(item),
+          score: calculateEnhancementScore(analyzeEquipmentPiece(item))
+        })),
+        totalCombatPower: this.calculateTotalCombatPower(fullInfo.stat),
+      };
+
+      // Calculate overall character score
+      const characterScore = this.calculateCharacterScore(fullInfo, equipmentAnalysis);
+
+      return {
+        ...fullInfo,
+        analysis: {
+          equipment: equipmentAnalysis,
+          characterScore,
+          recommendations: this.generateRecommendations(fullInfo, equipmentAnalysis)
+        }
+      };
+    } catch (error) {
+      this.logger.error('Error performing character analysis', {
+        characterName,
+        error,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Calculate total combat power from character stats
+   */
+  private calculateTotalCombatPower(statData: any): number {
+    if (!statData?.final_stat) return 0;
+    
+    const stats: Record<string, number> = {};
+    statData.final_stat.forEach((stat: any) => {
+      if (stat.stat_name && stat.stat_value) {
+        const value = parseInt(stat.stat_value.replace(/,/g, ''), 10);
+        stats[stat.stat_name.toLowerCase().replace(/\s+/g, '_')] = isNaN(value) ? 0 : value;
+      }
+    });
+    
+    return calculateCombatPower(stats);
+  }
+
+  /**
+   * Calculate overall character score
+   */
+  private calculateCharacterScore(fullInfo: any, equipmentAnalysis: any): number {
+    let score = 0;
+    
+    // Level contribution (0-300 points)
+    const level = fullInfo.basic?.character_level || 1;
+    score += Math.min(level, 300);
+    
+    // Equipment enhancement contribution (0-500 points)
+    const enhancementScore = equipmentAnalysis.enhancementScores.reduce((total: number, item: any) => total + item.score, 0);
+    score += Math.min(enhancementScore / 10, 500);
+    
+    // Set effects contribution (0-200 points)
+    const setEffectBonus = equipmentAnalysis.setEffects.length * 50;
+    score += Math.min(setEffectBonus, 200);
+    
+    // Combat power contribution (scaled)
+    const combatPowerBonus = Math.min(equipmentAnalysis.totalCombatPower / 1000, 1000);
+    score += combatPowerBonus;
+    
+    return Math.round(score);
+  }
+
+  /**
+   * Generate improvement recommendations
+   */
+  private generateRecommendations(fullInfo: any, equipmentAnalysis: any): string[] {
+    const recommendations: string[] = [];
+    
+    const level = fullInfo.basic?.character_level || 1;
+    
+    // Level recommendations
+    if (level < 200) {
+      recommendations.push('레벨업을 통해 더 강한 장비를 착용할 수 있습니다.');
+    }
+    
+    // Equipment enhancement recommendations
+    const lowEnhancementItems = equipmentAnalysis.enhancementScores.filter((item: any) => item.score < 50);
+    if (lowEnhancementItems.length > 0) {
+      recommendations.push(`${lowEnhancementItems.length}개의 장비 강화가 부족합니다. 스타포스와 잠재능력 개선을 고려해보세요.`);
+    }
+    
+    // Set effect recommendations
+    if (equipmentAnalysis.setEffects.length === 0) {
+      recommendations.push('세트 장비를 착용하여 추가 능력치를 얻을 수 있습니다.');
+    }
+    
+    // Combat power recommendations
+    if (equipmentAnalysis.totalCombatPower < 100000) {
+      recommendations.push('전투력 향상을 위해 장비 업그레이드를 고려해보세요.');
+    }
+    
+    return recommendations;
   }
 
   async getGuildFullInfo(guildName: string, worldName: string, date?: string) {
