@@ -159,12 +159,12 @@ Get basic info for character "SamplePlayer"
 
 ### Search for Guilds
 ```
-Search for guilds with name containing "Elite" in Aquila world
+Search for guilds with name containing "Elite" in Draco world
 ```
 
 ### Check Rankings
 ```
-Get overall rankings for Aquila world, Arch Mage class
+Get overall rankings for Draco world, Arch Mage class
 ```
 
 ### Get Job Class Information
