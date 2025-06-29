@@ -13,6 +13,8 @@ import {
   ErrorAggregator,
   isRetryableError,
   getRetryDelay,
+  TimeoutError,
+  RankingTimeoutError,
 } from '../utils/errors';
 import { McpLogger, performanceMonitor } from '../utils/logger';
 import {
@@ -24,13 +26,28 @@ import {
   CharacterPropensity,
   CharacterAbility,
   ItemEquipment,
+  CharacterPopularity,
+  SymbolEquipment,
+  SetEffect,
+  AndroidEquipment,
+  PetEquipment,
+  CharacterSkill,
+  LinkSkill,
+  VMatrix,
+  HexaMatrix,
+  HexaMatrixStat,
+  DojangRecord,
   UnionInfo,
   UnionRaider,
+  UnionArtifact,
   GuildId,
   GuildBasic,
   OverallRanking,
   UnionRanking,
   GuildRanking,
+  DojangRanking,
+  TheSeedRanking,
+  AchievementRanking,
   ApiError,
 } from './types';
 import {
@@ -447,8 +464,82 @@ export class NexonApiClient {
 
   private async request<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
     return this.retryRequest(async () => {
-      const response = await this.client.get<T>(endpoint, { params });
-      return response.data;
+      // Use extended timeout for ranking endpoints which are slower
+      const timeout = endpoint.includes('/ranking/')
+        ? API_CONFIG.RANKING_TIMEOUT
+        : API_CONFIG.TIMEOUT;
+
+      const isRankingEndpoint = endpoint.includes('/ranking/');
+      const requestStart = Date.now();
+
+      // Enhanced logging for API requests, especially ranking endpoints
+      this.mcpLogger.logApiRequest(endpoint, params);
+
+      try {
+        const response = await this.client.get<T>(endpoint, {
+          params,
+          timeout,
+        });
+
+        const requestDuration = Date.now() - requestStart;
+
+        // Log successful response with timing
+        this.mcpLogger.logApiResponse(endpoint, requestDuration, true);
+
+        return response.data;
+      } catch (error: any) {
+        const requestDuration = Date.now() - requestStart;
+
+        // Enhanced error logging
+        this.mcpLogger.logApiResponse(endpoint, requestDuration, false);
+        this.mcpLogger.logApiError(endpoint, error, requestDuration);
+
+        // Handle axios timeout errors specifically
+        if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+          this.mcpLogger.logError(error, {
+            endpoint,
+            timeout,
+            duration: requestDuration,
+            isRankingEndpoint,
+            params: params ? Object.keys(params) : [],
+          });
+
+          if (endpoint.includes('/ranking/')) {
+            throw new RankingTimeoutError(timeout, endpoint, params);
+          } else {
+            throw new TimeoutError(timeout, endpoint);
+          }
+        }
+
+        // Handle other axios errors
+        if (error.response?.status) {
+          this.mcpLogger.logError(error, {
+            endpoint,
+            statusCode: error.response.status,
+            responseData: error.response.data,
+            duration: requestDuration,
+            isRankingEndpoint,
+          });
+
+          const nexonError = createNexonApiError(
+            error.response.status,
+            error.response.data?.message || error.message,
+            endpoint,
+            params
+          );
+          throw nexonError;
+        }
+
+        // Log unknown errors
+        this.mcpLogger.logError(error, {
+          endpoint,
+          duration: requestDuration,
+          isRankingEndpoint,
+        });
+
+        // Re-throw original error if not handled
+        throw error;
+      }
     });
   }
 
@@ -1889,5 +1980,630 @@ export class NexonApiClient {
     });
 
     return { results, errors };
+  }
+
+  // ============ ADDITIONAL SEA API ENDPOINTS ============
+
+  /**
+   * Get character popularity information
+   */
+  async getCharacterPopularity(ocid: string, date?: string): Promise<CharacterPopularity> {
+    validateOcid(ocid);
+    if (date) {
+      validateDate(date);
+    }
+
+    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.POPULARITY, {
+      ocid,
+      date,
+    });
+    const cachedResult = this.cache.get<CharacterPopularity>(cacheKey);
+
+    if (cachedResult) {
+      this.logger.info('Character popularity cache hit', { ocid, date });
+      return cachedResult;
+    }
+
+    try {
+      const params: Record<string, any> = { ocid };
+      if (date) {
+        params.date = date;
+      }
+
+      const result = await this.request<CharacterPopularity>(
+        ENDPOINTS.CHARACTER.POPULARITY,
+        params
+      );
+
+      this.cache.set(cacheKey, result, CACHE_TTL.CHARACTER_BASIC);
+
+      this.logger.info('Character popularity retrieved successfully', { ocid, date });
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to get character popularity', { ocid, date, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get character symbol equipment
+   */
+  async getCharacterSymbolEquipment(ocid: string, date?: string): Promise<SymbolEquipment> {
+    validateOcid(ocid);
+    if (date) {
+      validateDate(date);
+    }
+
+    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.SYMBOL_EQUIPMENT, {
+      ocid,
+      date,
+    });
+    const cachedResult = this.cache.get<SymbolEquipment>(cacheKey);
+
+    if (cachedResult) {
+      this.logger.info('Character symbol equipment cache hit', { ocid, date });
+      return cachedResult;
+    }
+
+    try {
+      const params: Record<string, any> = { ocid };
+      if (date) {
+        params.date = date;
+      }
+
+      const result = await this.request<SymbolEquipment>(
+        ENDPOINTS.CHARACTER.SYMBOL_EQUIPMENT,
+        params
+      );
+
+      this.cache.set(cacheKey, result, CACHE_TTL.CHARACTER_EQUIPMENT);
+
+      this.logger.info('Character symbol equipment retrieved successfully', { ocid, date });
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to get character symbol equipment', { ocid, date, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get character set effects
+   */
+  async getCharacterSetEffect(ocid: string, date?: string): Promise<SetEffect> {
+    validateOcid(ocid);
+    if (date) {
+      validateDate(date);
+    }
+
+    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.SET_EFFECT, {
+      ocid,
+      date,
+    });
+    const cachedResult = this.cache.get<SetEffect>(cacheKey);
+
+    if (cachedResult) {
+      this.logger.info('Character set effect cache hit', { ocid, date });
+      return cachedResult;
+    }
+
+    try {
+      const params: Record<string, any> = { ocid };
+      if (date) {
+        params.date = date;
+      }
+
+      const result = await this.request<SetEffect>(ENDPOINTS.CHARACTER.SET_EFFECT, params);
+
+      this.cache.set(cacheKey, result, CACHE_TTL.CHARACTER_EQUIPMENT);
+
+      this.logger.info('Character set effect retrieved successfully', { ocid, date });
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to get character set effect', { ocid, date, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get character android equipment
+   */
+  async getCharacterAndroidEquipment(ocid: string, date?: string): Promise<AndroidEquipment> {
+    validateOcid(ocid);
+    if (date) {
+      validateDate(date);
+    }
+
+    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.ANDROID_EQUIPMENT, {
+      ocid,
+      date,
+    });
+    const cachedResult = this.cache.get<AndroidEquipment>(cacheKey);
+
+    if (cachedResult) {
+      this.logger.info('Character android equipment cache hit', { ocid, date });
+      return cachedResult;
+    }
+
+    try {
+      const params: Record<string, any> = { ocid };
+      if (date) {
+        params.date = date;
+      }
+
+      const result = await this.request<AndroidEquipment>(
+        ENDPOINTS.CHARACTER.ANDROID_EQUIPMENT,
+        params
+      );
+
+      this.cache.set(cacheKey, result, CACHE_TTL.CHARACTER_EQUIPMENT);
+
+      this.logger.info('Character android equipment retrieved successfully', { ocid, date });
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to get character android equipment', { ocid, date, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get character pet equipment
+   */
+  async getCharacterPetEquipment(ocid: string, date?: string): Promise<PetEquipment> {
+    validateOcid(ocid);
+    if (date) {
+      validateDate(date);
+    }
+
+    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.PET_EQUIPMENT, {
+      ocid,
+      date,
+    });
+    const cachedResult = this.cache.get<PetEquipment>(cacheKey);
+
+    if (cachedResult) {
+      this.logger.info('Character pet equipment cache hit', { ocid, date });
+      return cachedResult;
+    }
+
+    try {
+      const params: Record<string, any> = { ocid };
+      if (date) {
+        params.date = date;
+      }
+
+      const result = await this.request<PetEquipment>(ENDPOINTS.CHARACTER.PET_EQUIPMENT, params);
+
+      this.cache.set(cacheKey, result, CACHE_TTL.CHARACTER_EQUIPMENT);
+
+      this.logger.info('Character pet equipment retrieved successfully', { ocid, date });
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to get character pet equipment', { ocid, date, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get character skills
+   */
+  async getCharacterSkill(ocid: string, date?: string): Promise<CharacterSkill> {
+    validateOcid(ocid);
+    if (date) {
+      validateDate(date);
+    }
+
+    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.SKILL, { ocid, date });
+    const cachedResult = this.cache.get<CharacterSkill>(cacheKey);
+
+    if (cachedResult) {
+      this.logger.info('Character skill cache hit', { ocid, date });
+      return cachedResult;
+    }
+
+    try {
+      const params: Record<string, any> = { ocid };
+      if (date) {
+        params.date = date;
+      }
+
+      const result = await this.request<CharacterSkill>(ENDPOINTS.CHARACTER.SKILL, params);
+
+      this.cache.set(cacheKey, result, CACHE_TTL.CHARACTER_STATS);
+
+      this.logger.info('Character skill retrieved successfully', { ocid, date });
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to get character skill', { ocid, date, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get character link skills
+   */
+  async getCharacterLinkSkill(ocid: string, date?: string): Promise<LinkSkill> {
+    validateOcid(ocid);
+    if (date) {
+      validateDate(date);
+    }
+
+    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.LINK_SKILL, {
+      ocid,
+      date,
+    });
+    const cachedResult = this.cache.get<LinkSkill>(cacheKey);
+
+    if (cachedResult) {
+      this.logger.info('Character link skill cache hit', { ocid, date });
+      return cachedResult;
+    }
+
+    try {
+      const params: Record<string, any> = { ocid };
+      if (date) {
+        params.date = date;
+      }
+
+      const result = await this.request<LinkSkill>(ENDPOINTS.CHARACTER.LINK_SKILL, params);
+
+      this.cache.set(cacheKey, result, CACHE_TTL.CHARACTER_STATS);
+
+      this.logger.info('Character link skill retrieved successfully', { ocid, date });
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to get character link skill', { ocid, date, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get character V-Matrix
+   */
+  async getCharacterVMatrix(ocid: string, date?: string): Promise<VMatrix> {
+    validateOcid(ocid);
+    if (date) {
+      validateDate(date);
+    }
+
+    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.VMATRIX, { ocid, date });
+    const cachedResult = this.cache.get<VMatrix>(cacheKey);
+
+    if (cachedResult) {
+      this.logger.info('Character V-Matrix cache hit', { ocid, date });
+      return cachedResult;
+    }
+
+    try {
+      const params: Record<string, any> = { ocid };
+      if (date) {
+        params.date = date;
+      }
+
+      const result = await this.request<VMatrix>(ENDPOINTS.CHARACTER.VMATRIX, params);
+
+      this.cache.set(cacheKey, result, CACHE_TTL.CHARACTER_STATS);
+
+      this.logger.info('Character V-Matrix retrieved successfully', { ocid, date });
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to get character V-Matrix', { ocid, date, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get character Hexa Matrix
+   */
+  async getCharacterHexaMatrix(ocid: string, date?: string): Promise<HexaMatrix> {
+    validateOcid(ocid);
+    if (date) {
+      validateDate(date);
+    }
+
+    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.HEXAMATRIX, {
+      ocid,
+      date,
+    });
+    const cachedResult = this.cache.get<HexaMatrix>(cacheKey);
+
+    if (cachedResult) {
+      this.logger.info('Character Hexa Matrix cache hit', { ocid, date });
+      return cachedResult;
+    }
+
+    try {
+      const params: Record<string, any> = { ocid };
+      if (date) {
+        params.date = date;
+      }
+
+      const result = await this.request<HexaMatrix>(ENDPOINTS.CHARACTER.HEXAMATRIX, params);
+
+      this.cache.set(cacheKey, result, CACHE_TTL.CHARACTER_STATS);
+
+      this.logger.info('Character Hexa Matrix retrieved successfully', { ocid, date });
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to get character Hexa Matrix', { ocid, date, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get character Hexa Matrix stats
+   */
+  async getCharacterHexaMatrixStat(ocid: string, date?: string): Promise<HexaMatrixStat> {
+    validateOcid(ocid);
+    if (date) {
+      validateDate(date);
+    }
+
+    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.HEXAMATRIX_STAT, {
+      ocid,
+      date,
+    });
+    const cachedResult = this.cache.get<HexaMatrixStat>(cacheKey);
+
+    if (cachedResult) {
+      this.logger.info('Character Hexa Matrix stat cache hit', { ocid, date });
+      return cachedResult;
+    }
+
+    try {
+      const params: Record<string, any> = { ocid };
+      if (date) {
+        params.date = date;
+      }
+
+      const result = await this.request<HexaMatrixStat>(
+        ENDPOINTS.CHARACTER.HEXAMATRIX_STAT,
+        params
+      );
+
+      this.cache.set(cacheKey, result, CACHE_TTL.CHARACTER_STATS);
+
+      this.logger.info('Character Hexa Matrix stat retrieved successfully', { ocid, date });
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to get character Hexa Matrix stat', { ocid, date, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get character Dojang record
+   */
+  async getCharacterDojang(ocid: string, date?: string): Promise<DojangRecord> {
+    validateOcid(ocid);
+    if (date) {
+      validateDate(date);
+    }
+
+    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.CHARACTER.DOJANG, { ocid, date });
+    const cachedResult = this.cache.get<DojangRecord>(cacheKey);
+
+    if (cachedResult) {
+      this.logger.info('Character Dojang record cache hit', { ocid, date });
+      return cachedResult;
+    }
+
+    try {
+      const params: Record<string, any> = { ocid };
+      if (date) {
+        params.date = date;
+      }
+
+      const result = await this.request<DojangRecord>(ENDPOINTS.CHARACTER.DOJANG, params);
+
+      this.cache.set(cacheKey, result, CACHE_TTL.CHARACTER_STATS);
+
+      this.logger.info('Character Dojang record retrieved successfully', { ocid, date });
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to get character Dojang record', { ocid, date, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get union artifact information
+   */
+  async getUnionArtifact(ocid: string, date?: string): Promise<UnionArtifact> {
+    validateOcid(ocid);
+    if (date) {
+      validateDate(date);
+    }
+
+    const cacheKey = MemoryCache.generateApiCacheKey(ENDPOINTS.UNION.ARTIFACT, { ocid, date });
+    const cachedResult = this.cache.get<UnionArtifact>(cacheKey);
+
+    if (cachedResult) {
+      this.logger.info('Union artifact cache hit', { ocid, date });
+      return cachedResult;
+    }
+
+    try {
+      const params: Record<string, any> = { ocid };
+      if (date) {
+        params.date = date;
+      }
+
+      const result = await this.request<UnionArtifact>(ENDPOINTS.UNION.ARTIFACT, params);
+
+      this.cache.set(cacheKey, result, CACHE_TTL.UNION_ARTIFACT);
+
+      this.logger.info('Union artifact retrieved successfully', { ocid, date });
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to get union artifact', { ocid, date, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get Dojang rankings
+   */
+  async getDojangRanking(
+    worldName?: string,
+    characterName?: string,
+    page: number = 1,
+    date?: string
+  ): Promise<DojangRanking> {
+    if (worldName) {
+      validateWorldName(worldName);
+    }
+    if (page) {
+      validatePage(page);
+    }
+    if (date) {
+      validateDate(date);
+    }
+
+    let ocid: string | undefined;
+
+    // If character name is provided, get OCID for search
+    if (characterName) {
+      this.logger.info('Looking up character OCID for Dojang ranking search', { characterName });
+      const ocidResult = await this.getCharacterOcid(characterName);
+      ocid = ocidResult.ocid;
+    }
+
+    try {
+      const params: Record<string, any> = {};
+      if (worldName) params.world_name = worldName;
+      if (ocid) params.ocid = ocid;
+      if (page) params.page = page;
+      if (date) params.date = date;
+
+      const result = await this.request<DojangRanking>(ENDPOINTS.RANKING.DOJANG, params);
+
+      this.logger.info('Dojang ranking retrieved successfully', {
+        worldName: worldName || undefined,
+        characterName: characterName || undefined,
+        page,
+      } as any);
+
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to get Dojang ranking', {
+        worldName: worldName || undefined,
+        characterName: characterName || undefined,
+        page,
+        error: error instanceof Error ? error.message : String(error),
+      } as any);
+      throw error;
+    }
+  }
+
+  /**
+   * Get The Seed rankings
+   */
+  async getTheSeedRanking(
+    worldName?: string,
+    characterName?: string,
+    page: number = 1,
+    date?: string
+  ): Promise<TheSeedRanking> {
+    if (worldName) {
+      validateWorldName(worldName);
+    }
+    if (page) {
+      validatePage(page);
+    }
+    if (date) {
+      validateDate(date);
+    }
+
+    let ocid: string | undefined;
+
+    // If character name is provided, get OCID for search
+    if (characterName) {
+      this.logger.info('Looking up character OCID for The Seed ranking search', { characterName });
+      const ocidResult = await this.getCharacterOcid(characterName);
+      ocid = ocidResult.ocid;
+    }
+
+    try {
+      const params: Record<string, any> = {};
+      if (worldName) params.world_name = worldName;
+      if (ocid) params.ocid = ocid;
+      if (page) params.page = page;
+      if (date) params.date = date;
+
+      const result = await this.request<TheSeedRanking>(ENDPOINTS.RANKING.THESEED, params);
+
+      this.logger.info('The Seed ranking retrieved successfully', {
+        worldName: worldName || undefined,
+        characterName: characterName || undefined,
+        page,
+      } as any);
+
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to get The Seed ranking', {
+        worldName: worldName || undefined,
+        characterName: characterName || undefined,
+        page,
+        error: error instanceof Error ? error.message : String(error),
+      } as any);
+      throw error;
+    }
+  }
+
+  /**
+   * Get Achievement rankings
+   */
+  async getAchievementRanking(
+    worldName?: string,
+    characterName?: string,
+    page: number = 1,
+    date?: string
+  ): Promise<AchievementRanking> {
+    if (worldName) {
+      validateWorldName(worldName);
+    }
+    if (page) {
+      validatePage(page);
+    }
+    if (date) {
+      validateDate(date);
+    }
+
+    let ocid: string | undefined;
+
+    // If character name is provided, get OCID for search
+    if (characterName) {
+      this.logger.info('Looking up character OCID for Achievement ranking search', {
+        characterName,
+      });
+      const ocidResult = await this.getCharacterOcid(characterName);
+      ocid = ocidResult.ocid;
+    }
+
+    try {
+      const params: Record<string, any> = {};
+      if (worldName) params.world_name = worldName;
+      if (ocid) params.ocid = ocid;
+      if (page) params.page = page;
+      if (date) params.date = date;
+
+      const result = await this.request<AchievementRanking>(ENDPOINTS.RANKING.ACHIEVEMENT, params);
+
+      this.logger.info('Achievement ranking retrieved successfully', {
+        worldName: worldName || undefined,
+        characterName: characterName || undefined,
+        page,
+      } as any);
+
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to get Achievement ranking', {
+        worldName: worldName || undefined,
+        characterName: characterName || undefined,
+        page,
+        error: error instanceof Error ? error.message : String(error),
+      } as any);
+      throw error;
+    }
   }
 }

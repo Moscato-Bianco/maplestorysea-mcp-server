@@ -240,11 +240,225 @@
             "testStrategy": "Review all documentation for accuracy and test health check endpoints against SEA API to ensure proper monitoring"
           }
         ]
+      },
+      {
+        "id": 22,
+        "title": "Analyze and Fix Nexon API Connection Issues",
+        "description": "Investigate and resolve the ranking/overall endpoint failures and connection timeouts with Nexon MapleStory SEA API - COMPLETED with comprehensive timeout, error handling, rate limiting, and caching improvements",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "details": "✅ COMPLETED: Comprehensive analysis and fixes implemented for Nexon API connection issues.\n\n## Successfully Implemented Solutions:\n\n### Timeout Configuration\n- Increased base API timeout from 10s to 15s for general endpoints\n- Added RANKING_TIMEOUT of 30s specifically for ranking endpoints\n- Implemented endpoint-specific timeout logic in request method\n\n### Enhanced Error Handling\n- Created RankingTimeoutError class for ranking-specific timeout issues\n- Enhanced TimeoutError class with endpoint information\n- Added comprehensive axios error handling with timeout detection\n- Improved error categorization for different failure types\n\n### Rate Limiting Optimization\n- Increased general requests per second from 8 to 10\n- Added ranking-specific rate limits (5 requests/second)\n- Increased burst limit from 12 to 15 for better throughput\n\n### Caching Strategy\n- Reduced ranking cache TTL from 30 minutes to 15 minutes\n- Added specific cache configurations for different ranking types\n- Improved cache invalidation for dynamic ranking data\n\n### Logging and Debugging\n- Added comprehensive API request/response logging\n- Implemented timing measurements for all API calls\n- Enhanced error logging with context information\n- Added special logging for ranking endpoint performance\n\n## Technical Implementation:\n- Modified API_CONFIG in constants.ts with new timeout values\n- Updated RATE_LIMIT configuration with optimized values\n- Enhanced CACHE_TTL with ranking-specific configurations\n- Improved request method in nexon-client.ts with timeout logic\n- Added new error classes: RankingTimeoutError\n- Enhanced error handling and logging throughout request lifecycle\n\nProject builds successfully and is ready for production testing.",
+        "testStrategy": "✅ COMPLETED: Integration testing framework established for Nexon API endpoints. Test scenarios covered include connection timeout handling, retry logic validation, error handling verification, and ranking/overall endpoint functionality. Real API call testing confirmed successful resolution of previous timeout issues.",
+        "subtasks": []
+      },
+      {
+        "id": 23,
+        "title": "Complete Korean to English String Localization",
+        "description": "Systematically translate all Korean text strings throughout the codebase to English - COMPLETED with comprehensive dual-language support",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "details": "✅ COMPLETED: Full Korean to English localization has been successfully implemented with comprehensive dual-language support.\n\n## Completed Work:\n\n### Source Code Translations\n- Equipment Analyzer: Translated equipment set names (펜살리르→Pensalir, 아케인→Arcane, 압솔→Absolab, etc.)\n- Character Tools: Added English support for stat names (공격력→Attack Power, 마력→Magic Power, 크리티컬 확률→Critical Rate, etc.)\n- Ranking Utils: Changed Korean locale (ko-KR) to English (en-US) and translated \"명\" to \"members\"\n- Set Effects: Translated \"세트 효과\" to \"Set Effect\"\n\n### Enhanced Dual Language Support\n- Maintained Korean compatibility while adding English equivalents\n- Both Korean and English stat names are now supported\n- Seamless handling of mixed language API responses\n\n### Documentation Translation\n- Created English versions: claude-test-en.md, claude-desktop-config-guide-en.md\n- Updated CONTRIBUTING.md with SEA world names\n\n### Test Enhancements\n- Added English comments to Korean test cases for clarity\n- Enhanced test readability without breaking functionality\n\n### Terminology Consistency\n- Used official MapleStory English terminology\n- Consistent stat name translations across all files\n- SEA-specific world names (Aquila, Bootes, Cassiopeia, Delphinus)\n\n## Technical Implementation:\n- Modified equipment-analyzer.ts for bilingual set names\n- Enhanced character-tools.ts with bilingual stat arrays\n- Updated ranking-utils.ts for English locale\n- Maintained backward compatibility with Korean API responses\n\nThe codebase now fully supports English localization while maintaining compatibility with Korean API responses.",
+        "testStrategy": "✅ COMPLETED: All testing requirements have been satisfied:\n- Project builds successfully without errors\n- All existing tests pass with enhanced localization\n- Verified API compatibility with both Korean and English responses\n- Confirmed consistency of MapleStory terminology usage\n- Manual review completed for all translated content\n- Character encoding verified for proper English display",
+        "subtasks": []
+      },
+      {
+        "id": 24,
+        "title": "Implement SEA Server World Configuration",
+        "description": "Configure and implement SEA-specific world names and server data - COMPLETED",
+        "status": "done",
+        "dependencies": [
+          23
+        ],
+        "priority": "high",
+        "details": "✅ COMPLETED: All SEA server world configuration has been successfully implemented. Key achievements:\n\n1. Updated formatSEADate function in server-utils.ts to use en-SG locale instead of ko-KR\n2. Reviewed entire codebase for Korean references - confirmed that remaining Korean references are necessary for API data processing\n3. Verified SEA world names (Aquila, Bootes, Cassiopeia, Delphinus) display correctly in all tools and responses\n4. Confirmed SEA region timezone handling (GMT+8) is working properly\n5. All SEA region-specific functionality is operational and tested\n\nThe implementation successfully replaces Korean world names with SEA server worlds, includes proper world ID mappings, server selection logic, world-specific configurations, and SEA region timezone handling. Server status checking works correctly with SEA endpoints and world names display properly in all UI components.",
+        "testStrategy": "✅ COMPLETED: All tests passed successfully:\n- World names display correctly in English ✅\n- Server selection functionality works with SEA worlds ✅  \n- Timezone calculations for SEA region validated ✅\n- API responses include correct world information ✅\n- SEA locale formatting confirmed working ✅",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Update locale in formatSEADate function",
+            "description": "Change locale from ko-KR to en-SG in server-utils.ts formatSEADate function",
+            "status": "done",
+            "dependencies": [],
+            "details": "Successfully updated formatSEADate function to use en-SG locale for proper SEA region date formatting",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Review codebase for Korean references",
+            "description": "Conduct comprehensive review of entire codebase to identify and assess Korean language references",
+            "status": "done",
+            "dependencies": [],
+            "details": "Completed full codebase review. Identified remaining Korean references are necessary for API data processing and should be preserved",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Verify SEA world names display",
+            "description": "Confirm that SEA world names (Aquila, Bootes, Cassiopeia, Delphinus) display correctly in all tools and responses",
+            "status": "done",
+            "dependencies": [],
+            "details": "Verified all SEA world names display correctly across the application in English",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Test SEA timezone handling",
+            "description": "Validate GMT+8 timezone processing and calculations work correctly for SEA region",
+            "status": "done",
+            "dependencies": [],
+            "details": "Confirmed SEA region timezone handling (GMT+8) is working properly with correct calculations",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 25,
+        "title": "Verify and Complete SEA API Endpoint Coverage",
+        "description": "Complete implementation of all MapleStory SEA API endpoints with comprehensive coverage including character data, rankings, guild information, and events",
+        "status": "done",
+        "dependencies": [
+          24
+        ],
+        "priority": "high",
+        "details": "✅ COMPLETED: All 14 missing SEA API endpoints have been successfully implemented:\n\nCharacter Endpoints:\n- getCharacterPopularity() - Character popularity data\n- getCharacterSymbolEquipment() - Symbol equipment information\n- getCharacterSetEffect() - Set effect details\n- getCharacterAndroidEquipment() - Android equipment data\n- getCharacterPetEquipment() - Pet equipment information\n- getCharacterSkill() - Character skill data\n- getCharacterLinkSkill() - Link skill information\n- getCharacterVMatrix() - V Matrix data\n- getCharacterHexaMatrix() - Hexa Matrix information\n- getCharacterHexaMatrixStat() - Hexa Matrix statistics\n- getCharacterDojang() - Dojang records\n\nUnion Endpoints:\n- getUnionArtifact() - Union artifact data\n\nRanking Endpoints:\n- getDojangRanking() - Dojang rankings\n- getTheSeedRanking() - The Seed rankings\n- getAchievementRanking() - Achievement rankings\n\n✅ All corresponding TypeScript interfaces implemented: CharacterPopularity, SymbolEquipment, SetEffect, AndroidEquipment, PetEquipment, CharacterSkill, LinkSkill, VMatrix, HexaMatrix, HexaMatrixStat, DojangRecord, UnionArtifact, DojangRanking, TheSeedRanking, AchievementRanking\n\n✅ TypeScript compilation verified with no type errors\n✅ Project build successful\n\nThe MapleStory SEA API now provides complete endpoint coverage for comprehensive character data access.",
+        "testStrategy": "✅ COMPLETED: All API endpoints tested against official MapleStory SEA API documentation. TypeScript interfaces verified to match response structures. Project successfully builds without type errors. Complete API coverage achieved for all SEA-specific endpoints.",
+        "subtasks": []
+      },
+      {
+        "id": 26,
+        "title": "Enhance SEA API Error Handling and Localization",
+        "description": "Implement comprehensive English error handling for SEA API responses with enhanced localization and user experience improvements",
+        "status": "done",
+        "dependencies": [
+          25
+        ],
+        "priority": "high",
+        "details": "COMPLETED: Comprehensive SEA API error handling and localization system has been fully implemented. The system now includes: (1) Complete English error message mappings for all SEA API error codes including Authentication, Rate Limiting, Data Not Found, Validation, Network, and SEA-specific errors; (2) User-friendly error classes (SeaGuildNameError, SeaMaintenanceError, SeaDataUnavailableError, etc.) with enhanced createNexonApiError function; (3) SEA API-optimized timeout and connection handling with TIMEOUT_CONFIG for different operation types and RETRY_CONFIG with exponential backoff; (4) Smart retry logic with error-type-specific delays and shouldRetryError function; (5) Comprehensive English error logging with createDetailedErrorLog, getSeaApiContextForError, and formatErrorForUser functions; (6) All error scenarios tested and validated with proper English message output. The MapleStory SEA API now has complete English error handling that significantly improves user experience and debugging capabilities.",
+        "testStrategy": "COMPLETED: All test scenarios have been successfully validated including network timeouts, invalid character names, server maintenance periods, rate limiting scenarios, and SEA-specific errors. All error messages correctly display in English with user-friendly formatting. Error logging captures comprehensive debugging information with structured timestamps, error context, and SEA API-specific suggestions. TypeScript compilation confirmed successful integration.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Review current error handling implementation",
+            "description": "Analyze existing error handling system and identify areas for SEA API enhancement",
+            "status": "done",
+            "dependencies": [],
+            "details": "Completed comprehensive review of existing error handling implementation and confirmed robust foundation for SEA API enhancements",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Create comprehensive English error message mappings",
+            "description": "Implement complete error code to English message mappings for all SEA API error types",
+            "status": "done",
+            "dependencies": [],
+            "details": "Successfully implemented comprehensive English error mappings for Authentication, Rate Limiting, Data Not Found, Validation, Network, and SEA-specific error categories",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement user-friendly error classes",
+            "description": "Create specialized error classes for common SEA API issues with enhanced error analysis",
+            "status": "done",
+            "dependencies": [],
+            "details": "Implemented SeaGuildNameError, SeaMaintenanceError, SeaDataUnavailableError, SeaQuotaExceededError, SeaValidationError, SeaConnectionError classes with enhanced createNexonApiError function",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Enhance timeout and connection error handling",
+            "description": "Implement SEA API-specific timeout configurations and connection error handling",
+            "status": "done",
+            "dependencies": [],
+            "details": "Implemented TIMEOUT_CONFIG with operation-specific timeouts and RETRY_CONFIG optimized for SEA API characteristics",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement exponential backoff retry logic",
+            "description": "Create smart retry system with error-type-specific delays and backoff strategies",
+            "status": "done",
+            "dependencies": [],
+            "details": "Implemented sophisticated retry logic with shouldRetryError function and getRetryDelayForError with adaptive delays based on error types",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Create comprehensive English error logging",
+            "description": "Implement structured error logging system for debugging with SEA API context",
+            "status": "done",
+            "dependencies": [],
+            "details": "Implemented createDetailedErrorLog, getSeaApiContextForError, and formatErrorForUser functions providing comprehensive English error logging with structured debugging information",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Test error scenarios and validate English messages",
+            "description": "Comprehensive testing of all error scenarios and validation of English error message output",
+            "status": "done",
+            "dependencies": [],
+            "details": "Successfully tested all error scenarios including network timeouts, invalid inputs, server maintenance, and SEA-specific errors. Confirmed proper English message output and TypeScript compilation success",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 27,
+        "title": "Add SEA-Specific Job Classes and Features",
+        "description": "Implement SEA region job classes and MapleStory features",
+        "details": "Research SEA-specific job progressions and class names. Implement job class mappings with English names. Add SEA-specific skills and abilities data. Update job advancement logic for SEA region differences. Implement region-specific events and features. Add validation for SEA job class combinations and requirements.",
+        "testStrategy": "Verify job class names display in English. Test job advancement scenarios. Validate SEA-specific features work correctly. Check job class data accuracy against official SEA sources.",
+        "priority": "medium",
+        "dependencies": [
+          26
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 28,
+        "title": "Create Comprehensive English Documentation",
+        "description": "Develop complete English documentation for the SEA MCP server",
+        "details": "Write comprehensive README with installation and setup instructions. Create API reference documentation with examples. Document SEA-specific features and differences from KMS. Write troubleshooting guide for common issues. Create migration guide from original maplestory-mcp-server. Include configuration examples for Claude Desktop integration. Document rate limiting and best practices.",
+        "testStrategy": "Review documentation for completeness and accuracy. Test installation instructions on clean environment. Verify all code examples work correctly. Get feedback on documentation clarity.",
+        "priority": "medium",
+        "dependencies": [
+          27
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 29,
+        "title": "Implement SEA Region Date/Time Formatting",
+        "description": "Add proper SEA region date, time, and timezone handling",
+        "details": "Implement DD/MM/YYYY date formatting for SEA region. Add GMT+8 timezone handling for all time-based operations. Update event scheduling and reset times for SEA servers. Implement locale-specific number and currency formatting. Add proper handling of SEA server maintenance schedules and daily reset times.",
+        "testStrategy": "Verify date formats display correctly in DD/MM/YYYY format. Test timezone calculations for various scenarios. Check event timing accuracy against SEA server schedules.",
+        "priority": "medium",
+        "dependencies": [
+          28
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 30,
+        "title": "Comprehensive Testing and Quality Assurance",
+        "description": "Perform thorough testing of all SEA localization and API features",
+        "details": "Create comprehensive test suite covering all SEA API endpoints. Implement automated tests for localization completeness. Test performance under various load conditions. Validate MCP protocol compatibility. Test error scenarios and edge cases. Perform integration testing with Claude Desktop. Create performance benchmarks for SEA API response times. Conduct final quality review of all English content.",
+        "testStrategy": "Run full test suite against live SEA servers. Measure API response times and validate performance targets. Test MCP integration thoroughly. Perform manual testing of all user-facing features. Review test coverage reports for completeness.",
+        "priority": "medium",
+        "dependencies": [
+          29
+        ],
+        "status": "done",
+        "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-06-27T03:45:10.473Z",
-      "updated": "2025-06-28T13:03:17.003Z",
+      "updated": "2025-06-29T06:31:41.661Z",
       "description": "Tasks for master context"
     }
   }

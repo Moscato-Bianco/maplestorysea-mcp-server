@@ -18,6 +18,7 @@ export {
   GetCharacterFullInfoTool,
   GetCharacterAnalysisTool,
   FindCharacterRankingTool,
+  GetJobClassInfoTool,
 } from './character-tools';
 
 // Union tools
@@ -38,6 +39,7 @@ import {
   GetCharacterFullInfoTool,
   GetCharacterAnalysisTool,
   FindCharacterRankingTool,
+  GetJobClassInfoTool,
 } from './character-tools';
 import { GetUnionInfoTool, GetUnionRaiderTool, GetUnionRankingTool } from './union-tools';
 import { GetGuildInfoTool, GetGuildRankingTool, SearchGuildsTool } from './guild-tools';
@@ -53,6 +55,7 @@ export function createAllTools() {
     new GetCharacterFullInfoTool(),
     new GetCharacterAnalysisTool(),
     new FindCharacterRankingTool(),
+    new GetJobClassInfoTool(),
     new GetUnionInfoTool(),
     new GetUnionRaiderTool(),
     new GetUnionRankingTool(),

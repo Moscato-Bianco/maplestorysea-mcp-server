@@ -20,7 +20,7 @@ if (!process.env.NEXON_API_KEY) {
 global.testUtils = {
   delay: (ms: number) => new Promise(resolve => setTimeout(resolve, ms)),
   mockApiKey: 'test-api-key-for-mocking',
-  testCharacterName: 'TestCharacter',
+  testCharacterName: 'TestChar',
   testGuildName: 'TestGuild',
   testWorldName: 'Aquila'
 };

@@ -10,6 +10,8 @@ export class MockNexonApiClient {
   public getCharacterBasic = jest.fn();
   public getCharacterStat = jest.fn();
   public getCharacterItemEquipment = jest.fn();
+  public getCharacterCashItemEquipment = jest.fn();
+  public getCharacterBeautyEquipment = jest.fn();
   public getUnionInfo = jest.fn();
   public getUnionRaider = jest.fn();
   public getGuildInfo = jest.fn();
@@ -32,22 +34,26 @@ export class MockNexonApiClient {
       ocid: 'test-ocid-12345'
     });
 
-    // Character basic info mock
-    this.getCharacterBasic.mockResolvedValue({
-      date: '2024-01-15',
-      character_name: 'TestCharacter',
-      world_name: 'Aquila',
-      character_gender: 'Male',
-      character_class: 'Arch Mage (Fire, Poison)',
-      character_class_level: '4',
-      character_level: 250,
-      character_exp: 1234567890,
-      character_exp_rate: '15.75',
-      character_guild_name: 'TestGuild',
-      character_image: 'https://example.com/character.png',
-      character_date_create: '2020-01-01',
-      access_flag: 'true',
-      liberation_quest_clear_flag: 'true'
+    // Character basic info mock - return character name based on input
+    this.getCharacterBasic.mockImplementation((ocid: string) => {
+      // For testing, derive character name from the test context
+      const characterName = global.testUtils?.testCharacterName || 'TestChar';
+      return Promise.resolve({
+        date: '2024-01-15',
+        character_name: characterName,
+        world_name: 'Aquila',
+        character_gender: 'Male',
+        character_class: 'Arch Mage (Fire, Poison)',
+        character_class_level: '4',
+        character_level: 250,
+        character_exp: 1234567890,
+        character_exp_rate: '15.75',
+        character_guild_name: 'TestGuild',
+        character_image: 'https://example.com/character.png',
+        character_date_create: '2020-01-01',
+        access_flag: 'true',
+        liberation_quest_clear_flag: 'true'
+      });
     });
 
     // Character stats mock
@@ -99,12 +105,44 @@ export class MockNexonApiClient {
             jump: '0'
           },
           starforce: '22',
+          starforce_scroll_flag: 'N',
+          cuttable_count: '0',
+          golden_hammer_flag: 'N',
+          scroll_upgrade: '0',
+          scroll_upgradeable_count: '0',
+          scroll_resilience_count: '0',
           potential_option_grade: 'Legendary',
           potential_option_1: 'INT : +12%',
           potential_option_2: 'Magic Attack : +9%',
-          potential_option_3: 'All Stats : +6%'
+          potential_option_3: 'All Stats : +6%',
+          additional_potential_option_grade: null,
+          additional_potential_option_1: null,
+          additional_potential_option_2: null,
+          additional_potential_option_3: null,
+          item_base_option: {},
+          item_exceptional_option: {},
+          item_add_option: {},
+          item_starforce_option: {},
+          item_etc_option: {}
         }
       ]
+    });
+
+    // Cash item equipment mock
+    this.getCharacterCashItemEquipment.mockResolvedValue({
+      date: '2024-01-15',
+      character_gender: 'Male',
+      character_class: 'Arch Mage (Fire, Poison)',
+      preset_no: 1,
+      cash_item_equipment: []
+    });
+
+    // Beauty equipment mock
+    this.getCharacterBeautyEquipment.mockResolvedValue({
+      date: '2024-01-15',
+      character_gender: 'Male',
+      character_class: 'Arch Mage (Fire, Poison)',
+      character_beauty_equipment: []
     });
 
     // Union info mock

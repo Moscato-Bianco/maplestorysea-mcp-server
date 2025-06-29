@@ -145,7 +145,7 @@ export abstract class BaseTool implements ITool {
           name: error.name,
           code: (error as any).code,
           statusCode: (error as any).statusCode,
-          context: (error as any).context
+          context: (error as any).context,
         };
       }
     } else {

@@ -227,6 +227,57 @@ Retrieves comprehensive character information combining basic info, stats, and e
 }
 ```
 
+### get_job_class_info
+
+Get detailed information about a specific job class in MapleStory SEA including category, primary stats, and advancement paths.
+
+**Parameters:**
+- `jobClass` (string, required): Job class name (e.g., "Hero", "Arch Mage (Fire, Poison)", "Aran")
+
+**Returns:**
+```typescript
+{
+  success: true,
+  data: {
+    jobClass: string,
+    category: string,
+    primaryStat: string | string[],
+    description: string,
+    isBeginner: boolean,
+    recommendedBuild: string,
+    availableInSEA: boolean
+  },
+  metadata: {
+    executionTime: number,
+    apiCalls: number,
+    cacheHit: boolean
+  }
+}
+```
+
+**Example Usage:**
+```typescript
+// Claude Desktop query
+"Get detailed information about Hero job class"
+
+// Direct API call
+{
+  jobClass: "Hero"
+}
+```
+
+**Supported Job Classes:**
+All 241 SEA job classes are supported, organized into 9 categories:
+- **Explorer**: Hero, Paladin, Dark Knight, Arch Mage (Fire, Poison), Arch Mage (Ice, Lightning), Bishop, Bowmaster, Marksman, Pathfinder, Night Lord, Shadower, Dual Blade, Buccaneer, Corsair, Cannoneer
+- **Cygnus Knights**: Dawn Warrior, Blaze Wizard, Wind Archer, Night Walker, Thunder Breaker, Mihile
+- **Heroes**: Aran, Evan, Mercedes, Phantom, Luminous, Shade
+- **Resistance**: Battle Mage, Wild Hunter, Mechanic, Blaster, Demon Slayer, Demon Avenger, Xenon
+- **Nova**: Kaiser, Angelic Buster, Cadena, Kain
+- **Sengoku**: Kanna, Hayato
+- **Flora**: Adele, Ark, Illium, Khali
+- **Anima**: Hoyoung, Lara
+- **Jianghu**: Lynn, Mo Xuan
+
 ## Union Tools
 
 ### get_union_info

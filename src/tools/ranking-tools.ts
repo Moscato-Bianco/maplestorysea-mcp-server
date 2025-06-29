@@ -5,6 +5,8 @@
 
 import { JSONSchema7 } from 'json-schema';
 import { EnhancedBaseTool, ToolContext, ToolResult, ToolCategory } from './base-tool';
+import { JOB_CLASSES } from '../api/constants';
+import { formatSEADate, formatSEANumber, getCurrentSEADate } from '../utils/server-utils';
 
 /**
  * Tool for getting overall level rankings
@@ -25,41 +27,7 @@ export class GetOverallRankingTool extends EnhancedBaseTool {
       className: {
         type: 'string',
         description: 'Character class filter (optional)',
-        enum: [
-          'Hero',
-          'Paladin',
-          'Dark Knight',
-          'Arch Mage (Fire, Poison)',
-          'Arch Mage (Ice, Lightning)',
-          'Bishop',
-          'Bowmaster',
-          'Marksman',
-          'Pathfinder',
-          'Night Lord',
-          'Shadower',
-          'Dual Blade',
-          'Buccaneer',
-          'Cannoneer',
-          'Striker',
-          'Aran',
-          'Evan',
-          'Luminous',
-          'Mercedes',
-          'Phantom',
-          'Shade',
-          'Kaiser',
-          'Angelic Buster',
-          'Zero',
-          'Kinesis',
-          'Illium',
-          'Ark',
-          'Cadena',
-          'Kain',
-          'Adele',
-          'Lara',
-          'Hoyoung',
-          'Khali',
-        ],
+        enum: [...JOB_CLASSES],
       },
       characterName: {
         type: 'string',
@@ -150,16 +118,16 @@ export class GetOverallRankingTool extends EnhancedBaseTool {
 
       const rankingData =
         rankings.ranking?.map((entry) => ({
-          rank: entry.ranking,
+          rank: formatSEANumber(entry.ranking),
           characterName: entry.character_name,
           world: entry.world_name,
           class: entry.class_name,
           subClass: entry.sub_class_name,
-          level: entry.character_level,
-          exp: entry.character_exp,
-          popularity: entry.character_popularity,
+          level: formatSEANumber(entry.character_level),
+          exp: formatSEANumber(entry.character_exp),
+          popularity: formatSEANumber(entry.character_popularity),
           guildName: entry.character_guildname,
-          date: entry.date,
+          date: entry.date ? formatSEADate(entry.date) : getCurrentSEADate(),
         })) || [];
 
       context.logger.info('Overall rankings retrieved successfully', {
@@ -180,15 +148,25 @@ export class GetOverallRankingTool extends EnhancedBaseTool {
             className: className || 'all',
             searchCharacter: characterName || undefined,
           },
-          date: date || 'latest',
+          date: date ? formatSEADate(date) : getCurrentSEADate(),
           rankings: rankingData,
           summary: {
-            totalResults: rankingData.length,
-            topLevel: rankingData.length > 0 ? Math.max(...rankingData.map((r) => r.level)) : 0,
+            totalResults: formatSEANumber(rankingData.length),
+            topLevel:
+              rankingData.length > 0
+                ? formatSEANumber(
+                    Math.max(...rankingData.map((r) => parseInt(r.level.replace(/,/g, ''))))
+                  )
+                : '0',
             averageLevel:
               rankingData.length > 0
-                ? Math.round(rankingData.reduce((sum, r) => sum + r.level, 0) / rankingData.length)
-                : 0,
+                ? formatSEANumber(
+                    Math.round(
+                      rankingData.reduce((sum, r) => sum + parseInt(r.level.replace(/,/g, '')), 0) /
+                        rankingData.length
+                    )
+                  )
+                : '0',
             worldDistribution: rankingData.reduce(
               (acc, entry) => {
                 acc[entry.world] = (acc[entry.world] || 0) + 1;

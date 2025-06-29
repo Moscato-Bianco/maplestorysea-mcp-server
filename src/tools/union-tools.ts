@@ -5,6 +5,7 @@
 
 import { JSONSchema7 } from 'json-schema';
 import { EnhancedBaseTool, ToolContext, ToolResult, ToolCategory } from './base-tool';
+import { formatSEADate, formatSEANumber, getCurrentSEADate } from '../utils/server-utils';
 
 /**
  * Tool for getting union information
@@ -81,13 +82,17 @@ export class GetUnionInfoTool extends EnhancedBaseTool {
       return this.formatResult(
         {
           characterName,
-          date: unionInfo.date || date || 'latest',
-          unionLevel: unionInfo.union_level,
+          date: unionInfo.date
+            ? formatSEADate(unionInfo.date)
+            : date
+              ? formatSEADate(date)
+              : getCurrentSEADate(),
+          unionLevel: formatSEANumber(unionInfo.union_level),
           unionGrade: unionInfo.union_grade,
           unionArtifact: {
-            level: unionInfo.union_artifact_level,
-            exp: unionInfo.union_artifact_exp,
-            point: unionInfo.union_artifact_point,
+            level: formatSEANumber(unionInfo.union_artifact_level),
+            exp: formatSEANumber(unionInfo.union_artifact_exp),
+            point: formatSEANumber(unionInfo.union_artifact_point),
           },
         },
         {

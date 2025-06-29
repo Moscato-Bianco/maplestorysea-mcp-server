@@ -455,6 +455,406 @@ export interface DateParam {
   date?: string;
 }
 
+// Additional Character types for missing endpoints
+export interface CharacterPopularity {
+  date: string;
+  popularity: number;
+  character_name: string;
+}
+
+export interface SymbolEquipment {
+  date: string;
+  character_class: string;
+  symbol: Array<{
+    symbol_name: string;
+    symbol_icon: string;
+    symbol_description: string;
+    symbol_force: string;
+    symbol_level: number;
+    symbol_str: string;
+    symbol_dex: string;
+    symbol_int: string;
+    symbol_luk: string;
+    symbol_hp: string;
+    symbol_growth_count: number;
+    symbol_require_growth_count: number;
+  }>;
+}
+
+export interface SetEffect {
+  date: string;
+  set_effect: Array<{
+    set_name: string;
+    total_set_count: number;
+    set_effect_info: Array<{
+      set_count: number;
+      set_option: string;
+    }>;
+    set_option: string;
+  }>;
+}
+
+export interface AndroidEquipment {
+  date: string;
+  android_name: string;
+  android_nickname: string;
+  android_icon: string;
+  android_description: string;
+  android_hair: {
+    hair_name: string;
+    base_color: string;
+    mix_color: string;
+    mix_rate: string;
+  };
+  android_face: {
+    face_name: string;
+    base_color: string;
+    mix_color: string;
+    mix_rate: string;
+  };
+  android_ear_sensor_clip_flag: string;
+  android_gender: string;
+  android_grade: string;
+  android_skin_name: string;
+  android_cash_item_equipment: Array<{
+    cash_item_equipment_part: string;
+    cash_item_equipment_slot: string;
+    cash_item_name: string;
+    cash_item_icon: string;
+    cash_item_description: string;
+    cash_item_option: Array<{
+      option_type: string;
+      option_value: string;
+    }>;
+    date_expire: string;
+    date_option_expire: string;
+    cash_item_label: string;
+    cash_item_coloring_prism: {
+      color_range: string;
+      hue: number;
+      saturation: number;
+      value: number;
+    };
+  }>;
+  android_non_cash_item_equipment: Array<{
+    non_cash_item_equipment_part: string;
+    non_cash_item_equipment_slot: string;
+    non_cash_item_name: string;
+    non_cash_item_icon: string;
+  }>;
+  android_preset_1: any;
+  android_preset_2: any;
+  android_preset_3: any;
+}
+
+export interface PetEquipment {
+  date: string;
+  pet_1_name: string;
+  pet_1_nickname: string;
+  pet_1_icon: string;
+  pet_1_description: string;
+  pet_1_equipment: Array<{
+    item_name: string;
+    item_icon: string;
+    item_description: string;
+    item_option: Array<{
+      option_type: string;
+      option_value: string;
+    }>;
+    scroll_upgrade: string;
+    scroll_upgradeable: string;
+    item_shape: string;
+    item_shape_icon: string;
+  }>;
+  pet_1_auto_skill: {
+    skill_1: string;
+    skill_1_icon: string;
+    skill_2: string;
+    skill_2_icon: string;
+  };
+  pet_1_pet_type: string;
+  pet_1_skill: Array<string>;
+  pet_1_date_expire: string;
+  pet_1_appearance: string;
+  pet_1_appearance_icon: string;
+  pet_2_name: string;
+  pet_2_nickname: string;
+  pet_2_icon: string;
+  pet_2_description: string;
+  pet_2_equipment: Array<{
+    item_name: string;
+    item_icon: string;
+    item_description: string;
+    item_option: Array<{
+      option_type: string;
+      option_value: string;
+    }>;
+    scroll_upgrade: string;
+    scroll_upgradeable: string;
+    item_shape: string;
+    item_shape_icon: string;
+  }>;
+  pet_2_auto_skill: {
+    skill_1: string;
+    skill_1_icon: string;
+    skill_2: string;
+    skill_2_icon: string;
+  };
+  pet_2_pet_type: string;
+  pet_2_skill: Array<string>;
+  pet_2_date_expire: string;
+  pet_2_appearance: string;
+  pet_2_appearance_icon: string;
+  pet_3_name: string;
+  pet_3_nickname: string;
+  pet_3_icon: string;
+  pet_3_description: string;
+  pet_3_equipment: Array<{
+    item_name: string;
+    item_icon: string;
+    item_description: string;
+    item_option: Array<{
+      option_type: string;
+      option_value: string;
+    }>;
+    scroll_upgrade: string;
+    scroll_upgradeable: string;
+    item_shape: string;
+    item_shape_icon: string;
+  }>;
+  pet_3_auto_skill: {
+    skill_1: string;
+    skill_1_icon: string;
+    skill_2: string;
+    skill_2_icon: string;
+  };
+  pet_3_pet_type: string;
+  pet_3_skill: Array<string>;
+  pet_3_date_expire: string;
+  pet_3_appearance: string;
+  pet_3_appearance_icon: string;
+}
+
+export interface CharacterSkill {
+  date: string;
+  character_class: string;
+  character_skill_grade: string;
+  character_skill: Array<{
+    skill_name: string;
+    skill_description: string;
+    skill_level: number;
+    skill_effect: string;
+    skill_icon: string;
+  }>;
+}
+
+export interface LinkSkill {
+  date: string;
+  character_class: string;
+  character_link_skill: Array<{
+    skill_name: string;
+    skill_description: string;
+    skill_level: number;
+    skill_effect: string;
+    skill_icon: string;
+  }>;
+  character_link_skill_preset_1: Array<{
+    skill_name: string;
+    skill_description: string;
+    skill_level: number;
+    skill_effect: string;
+    skill_icon: string;
+  }>;
+  character_link_skill_preset_2: Array<{
+    skill_name: string;
+    skill_description: string;
+    skill_level: number;
+    skill_effect: string;
+    skill_icon: string;
+  }>;
+  character_link_skill_preset_3: Array<{
+    skill_name: string;
+    skill_description: string;
+    skill_level: number;
+    skill_effect: string;
+    skill_icon: string;
+  }>;
+  character_owned_link_skill: Array<{
+    skill_name: string;
+    skill_description: string;
+    skill_level: number;
+    skill_effect: string;
+    skill_icon: string;
+  }>;
+  character_owned_link_skill_preset_1: Array<{
+    skill_name: string;
+    skill_description: string;
+    skill_level: number;
+    skill_effect: string;
+    skill_icon: string;
+  }>;
+  character_owned_link_skill_preset_2: Array<{
+    skill_name: string;
+    skill_description: string;
+    skill_level: number;
+    skill_effect: string;
+    skill_icon: string;
+  }>;
+  character_owned_link_skill_preset_3: Array<{
+    skill_name: string;
+    skill_description: string;
+    skill_level: number;
+    skill_effect: string;
+    skill_icon: string;
+  }>;
+}
+
+export interface VMatrix {
+  date: string;
+  character_class: string;
+  character_v_core_equipment: Array<{
+    slot_id: string;
+    slot_level: number;
+    v_core_name: string;
+    v_core_type: string;
+    v_core_level: number;
+    v_core_skill_1: string;
+    v_core_skill_2: string;
+    v_core_skill_3: string;
+  }>;
+  character_v_matrix_remain_slot_upgrade_point: number;
+}
+
+export interface HexaMatrix {
+  date: string;
+  character_hexa_core_equipment: Array<{
+    hexa_core_name: string;
+    hexa_core_level: number;
+    hexa_core_type: string;
+    linked_skill: Array<{
+      hexa_skill_id: string;
+    }>;
+  }>;
+  character_hexa_matrix_preset_1: Array<{
+    hexa_core_name: string;
+    hexa_core_level: number;
+    hexa_core_type: string;
+    linked_skill: Array<{
+      hexa_skill_id: string;
+    }>;
+  }>;
+  character_hexa_matrix_preset_2: Array<{
+    hexa_core_name: string;
+    hexa_core_level: number;
+    hexa_core_type: string;
+    linked_skill: Array<{
+      hexa_skill_id: string;
+    }>;
+  }>;
+  character_hexa_matrix_preset_3: Array<{
+    hexa_core_name: string;
+    hexa_core_level: number;
+    hexa_core_type: string;
+    linked_skill: Array<{
+      hexa_skill_id: string;
+    }>;
+  }>;
+}
+
+export interface HexaMatrixStat {
+  date: string;
+  character_class: string;
+  character_hexa_stat_core: Array<{
+    slot_id: string;
+    main_stat_name: string;
+    sub_stat_name_1: string;
+    sub_stat_name_2: string;
+    main_stat_level: number;
+    sub_stat_level_1: number;
+    sub_stat_level_2: number;
+    stat_grade: number;
+  }>;
+  preset_hexa_stat_core: Array<{
+    slot_id: string;
+    main_stat_name: string;
+    sub_stat_name_1: string;
+    sub_stat_name_2: string;
+    main_stat_level: number;
+    sub_stat_level_1: number;
+    sub_stat_level_2: number;
+    stat_grade: number;
+  }>;
+}
+
+export interface DojangRecord {
+  date: string;
+  character_class: string;
+  world_name: string;
+  dojang_best_floor: number;
+  date_dojang_record: string;
+  dojang_best_time: number;
+}
+
+export interface UnionArtifact {
+  date: string;
+  union_artifact_effect: Array<{
+    name: string;
+    level: number;
+  }>;
+  union_artifact_crystal: Array<{
+    name: string;
+    validity_flag: string;
+    date_expire: string;
+    level: number;
+    crystal_option_name_1: string;
+    crystal_option_name_2: string;
+    crystal_option_name_3: string;
+  }>;
+  union_artifact_remain_ap: number;
+}
+
+// Additional Ranking types for missing endpoints
+export interface DojangRanking extends BaseApiResponse {
+  ranking: Array<{
+    date: string;
+    ranking: number;
+    character_name: string;
+    world_name: string;
+    class_name: string;
+    sub_class_name: string;
+    character_level: number;
+    dojang_floor: number;
+    dojang_time_record: number;
+  }>;
+}
+
+export interface TheSeedRanking extends BaseApiResponse {
+  ranking: Array<{
+    date: string;
+    ranking: number;
+    character_name: string;
+    world_name: string;
+    class_name: string;
+    sub_class_name: string;
+    character_level: number;
+    theseed_floor: number;
+    theseed_time_record: number;
+  }>;
+}
+
+export interface AchievementRanking extends BaseApiResponse {
+  ranking: Array<{
+    date: string;
+    ranking: number;
+    character_name: string;
+    world_name: string;
+    class_name: string;
+    sub_class_name: string;
+    trophy_point: number;
+    trophy_grade: string;
+  }>;
+}
+
 // Combined types for convenience
 export type CharacterInfo = CharacterBasic &
   CharacterStat &
@@ -462,4 +862,10 @@ export type CharacterInfo = CharacterBasic &
   CharacterPropensity &
   CharacterAbility;
 export type EquipmentInfo = ItemEquipment;
-export type RankingInfo = OverallRanking | UnionRanking | GuildRanking;
+export type RankingInfo =
+  | OverallRanking
+  | UnionRanking
+  | GuildRanking
+  | DojangRanking
+  | TheSeedRanking
+  | AchievementRanking;

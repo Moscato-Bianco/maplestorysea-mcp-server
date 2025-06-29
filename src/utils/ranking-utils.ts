@@ -85,7 +85,9 @@ export function formatRankingEntry(entry: any, position?: number): any {
     formattedLevel: entry.character_level ? `Lv.${entry.character_level}` : undefined,
     formattedExp: entry.character_exp ? formatNumber(entry.character_exp) : undefined,
     formattedGuildLevel: entry.guild_level ? `Lv.${entry.guild_level}` : undefined,
-    formattedMemberCount: entry.guild_member_count ? `${entry.guild_member_count}명` : undefined,
+    formattedMemberCount: entry.guild_member_count
+      ? `${entry.guild_member_count} members`
+      : undefined,
   };
 }
 
@@ -96,7 +98,7 @@ export function formatNumber(num: number | string): string {
   const number = typeof num === 'string' ? parseInt(num, 10) : num;
   if (isNaN(number)) return '0';
 
-  return number.toLocaleString('ko-KR');
+  return number.toLocaleString('en-US');
 }
 
 /**

@@ -44,12 +44,13 @@ export class ApiHealthChecker extends HealthChecker {
     const startTime = Date.now();
     const timeout = options.timeout || 5000;
 
-    try {
-      // Create a timeout promise
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Health check timeout')), timeout);
-      });
+    // Create a timeout promise with cleanup
+    let timeoutId: NodeJS.Timeout | undefined;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error('Health check timeout')), timeout);
+    });
 
+    try {
       // Test API connectivity with a simple ranking request
       const healthPromise = this.apiClient.getOverallRanking(
         undefined,
@@ -59,7 +60,12 @@ export class ApiHealthChecker extends HealthChecker {
         1
       );
 
-      await Promise.race([healthPromise, timeoutPromise]);
+      const result = await Promise.race([healthPromise, timeoutPromise]);
+
+      // Clear the timeout if the API call succeeded
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
 
       const responseTime = Date.now() - startTime;
 
@@ -73,6 +79,11 @@ export class ApiHealthChecker extends HealthChecker {
         },
       };
     } catch (error) {
+      // Clear the timeout if it exists
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+
       const responseTime = Date.now() - startTime;
 
       let errorMessage: string;

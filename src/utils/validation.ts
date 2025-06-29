@@ -3,7 +3,11 @@
  */
 
 import { WORLDS } from '../api/constants';
-import { SeaCharacterNameError, SeaWorldNotFoundError, ValidationError as McpValidationError } from './errors';
+import {
+  SeaCharacterNameError,
+  SeaWorldNotFoundError,
+  ValidationError as McpValidationError,
+} from './errors';
 
 export class ValidationError extends Error {
   constructor(message: string) {
@@ -108,6 +112,22 @@ export function validateDate(date: string): void {
     throw new ValidationError('Invalid date provided');
   }
 
+  // Check if the date was auto-corrected by checking if it matches the input
+  const dateParts = date.split('-').map(Number);
+  if (dateParts.length !== 3) {
+    throw new ValidationError('Invalid date format');
+  }
+  const year = dateParts[0]!;
+  const month = dateParts[1]!;
+  const day = dateParts[2]!;
+  if (
+    parsedDate.getFullYear() !== year ||
+    parsedDate.getMonth() !== month - 1 || // Month is 0-indexed
+    parsedDate.getDate() !== day
+  ) {
+    throw new ValidationError('Invalid date provided');
+  }
+
   // Check if date is not in the future
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -131,7 +151,18 @@ export function sanitizeCharacterName(characterName: string): string {
     return '';
   }
 
-  return characterName.trim().normalize('NFC');
+  return characterName.trim().toLowerCase().replace(/\s+/g, '');
+}
+
+/**
+ * Sanitizes guild name for consistent processing
+ */
+export function sanitizeGuildName(guildName: string): string {
+  if (!guildName || typeof guildName !== 'string') {
+    return '';
+  }
+
+  return guildName.trim().toLowerCase().replace(/\s+/g, '');
 }
 
 /**

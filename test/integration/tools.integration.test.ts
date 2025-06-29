@@ -49,7 +49,7 @@ describe('MCP Tools Integration Tests', () => {
       expect(basicInfoTool).toBeDefined();
 
       const result = await basicInfoTool!.execute(
-        { characterName: 'TestCharacter' },
+        { characterName: 'TestChar' },
         {
           nexonClient: mockApiClient as any,
           logger: mockLogger,
@@ -57,10 +57,10 @@ describe('MCP Tools Integration Tests', () => {
       );
 
       expect(result.success).toBe(true);
-      expect(result.data).toHaveProperty('characterName', 'TestCharacter');
+      expect(result.data).toHaveProperty('characterName', 'TestChar');
       expect(result.data).toHaveProperty('level');
       expect(result.data).toHaveProperty('world');
-      expect(mockApiClient.getCharacterOcid).toHaveBeenCalledWith('TestCharacter');
+      expect(mockApiClient.getCharacterOcid).toHaveBeenCalledWith('TestChar');
       expect(mockApiClient.getCharacterBasic).toHaveBeenCalled();
     });
 
@@ -69,7 +69,7 @@ describe('MCP Tools Integration Tests', () => {
       expect(statsTool).toBeDefined();
 
       const result = await statsTool!.execute(
-        { characterName: 'TestCharacter' },
+        { characterName: 'TestChar' },
         {
           nexonClient: mockApiClient as any,
           logger: mockLogger,
@@ -77,8 +77,9 @@ describe('MCP Tools Integration Tests', () => {
       );
 
       expect(result.success).toBe(true);
-      expect(result.data).toHaveProperty('stats');
-      expect(result.data.stats).toBeInstanceOf(Array);
+      expect(result.data).toHaveProperty('basicStats');
+      expect(result.data).toHaveProperty('combatStats');
+      expect(result.data).toHaveProperty('allStats');
       expect(mockApiClient.getCharacterStat).toHaveBeenCalled();
     });
 
@@ -87,7 +88,7 @@ describe('MCP Tools Integration Tests', () => {
       expect(equipmentTool).toBeDefined();
 
       const result = await equipmentTool!.execute(
-        { characterName: 'TestCharacter' },
+        { characterName: 'TestChar' },
         {
           nexonClient: mockApiClient as any,
           logger: mockLogger,
@@ -104,7 +105,7 @@ describe('MCP Tools Integration Tests', () => {
       expect(fullInfoTool).toBeDefined();
 
       const result = await fullInfoTool!.execute(
-        { characterName: 'TestCharacter' },
+        { characterName: 'TestChar' },
         {
           nexonClient: mockApiClient as any,
           logger: mockLogger,
@@ -112,7 +113,7 @@ describe('MCP Tools Integration Tests', () => {
       );
 
       expect(result.success).toBe(true);
-      expect(result.data).toHaveProperty('basic');
+      expect(result.data).toHaveProperty('basicInfo');
       expect(result.data).toHaveProperty('stats');
       expect(result.data).toHaveProperty('equipment');
     });
@@ -122,7 +123,7 @@ describe('MCP Tools Integration Tests', () => {
       expect(rankingTool).toBeDefined();
 
       const result = await rankingTool!.execute(
-        { characterName: 'TestCharacter', worldName: 'Aquila' },
+        { characterName: 'TestChar', worldName: 'Aquila' },
         {
           nexonClient: mockApiClient as any,
           logger: mockLogger,
@@ -141,7 +142,7 @@ describe('MCP Tools Integration Tests', () => {
       expect(unionTool).toBeDefined();
 
       const result = await unionTool!.execute(
-        { characterName: 'TestCharacter' },
+        { characterName: 'TestChar' },
         {
           nexonClient: mockApiClient as any,
           logger: mockLogger,
@@ -158,7 +159,7 @@ describe('MCP Tools Integration Tests', () => {
       expect(raiderTool).toBeDefined();
 
       const result = await raiderTool!.execute(
-        { characterName: 'TestCharacter' },
+        { characterName: 'TestChar' },
         {
           nexonClient: mockApiClient as any,
           logger: mockLogger,

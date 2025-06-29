@@ -5,6 +5,68 @@
 
 import { JSONSchema7 } from 'json-schema';
 import { EnhancedBaseTool, ToolContext, ToolResult, ToolCategory } from './base-tool';
+import {
+  validateJobClass,
+  getJobCategory,
+  getJobPrimaryStat,
+  getJobDescription,
+  formatJobClassName,
+  isBeginnerJob,
+  getRecommendedBuild,
+  JobClass,
+  JobCategory,
+} from '../utils/job-utils';
+import { JOB_CLASSES } from '../api/constants';
+import {
+  formatSEADate,
+  formatSEATime,
+  formatSEANumber,
+  formatSEAMesos,
+  formatSEAPercentage,
+  getCurrentSEADate,
+} from '../utils/server-utils';
+
+/**
+ * Format equipment option values for SEA region display
+ */
+function formatEquipmentOption(option: any): any {
+  if (!option || typeof option !== 'object') {
+    return option;
+  }
+
+  const formatted = { ...option };
+
+  // Format numeric stat values in equipment options
+  Object.keys(formatted).forEach((key) => {
+    const value = formatted[key];
+    if (typeof value === 'string') {
+      const numValue = parseInt(value);
+      if (!isNaN(numValue) && numValue > 0) {
+        // Check if it's likely a percentage value
+        if (
+          key.includes('확률') ||
+          key.includes('rate') ||
+          key.includes('데미지') ||
+          key.includes('damage') ||
+          key.includes('무시') ||
+          key.includes('ignore') ||
+          key.includes('율') ||
+          key.includes('스탠스') ||
+          key.includes('stance')
+        ) {
+          const percentValue = parseFloat(value);
+          if (!isNaN(percentValue)) {
+            formatted[key] = formatSEAPercentage(percentValue);
+          }
+        } else {
+          formatted[key] = formatSEANumber(numValue);
+        }
+      }
+    }
+  });
+
+  return formatted;
+}
 
 /**
  * Tool for getting basic character information
@@ -81,17 +143,25 @@ export class GetCharacterBasicInfoTool extends EnhancedBaseTool {
       return this.formatResult(
         {
           characterName: basicInfo.character_name,
-          level: basicInfo.character_level,
+          level: formatSEANumber(parseInt(basicInfo.character_level.toString())),
           job: basicInfo.character_class,
           jobDetail: basicInfo.character_class_level,
-          exp: basicInfo.character_exp,
-          expRate: basicInfo.character_exp_rate,
+          exp: formatSEANumber(
+            typeof basicInfo.character_exp === 'string'
+              ? parseInt(basicInfo.character_exp)
+              : basicInfo.character_exp
+          ),
+          expRate: formatSEAPercentage(parseFloat(basicInfo.character_exp_rate)),
           guildName: basicInfo.character_guild_name || null,
           world: basicInfo.world_name,
           gender: basicInfo.character_gender,
           // Basic stats are not available in CharacterBasic endpoint
           // They need to be fetched separately from getCharacterStat
-          date: basicInfo.date || date || 'latest',
+          date: basicInfo.date
+            ? formatSEADate(basicInfo.date)
+            : date
+              ? formatSEADate(date)
+              : getCurrentSEADate(),
         },
         {
           executionTime,
@@ -188,6 +258,7 @@ export class GetCharacterStatsTool extends EnhancedBaseTool {
       const combatStats =
         stats.final_stat?.filter((s) =>
           [
+            // Korean stat names
             '공격력',
             '마력',
             '크리티컬 확률',
@@ -195,12 +266,31 @@ export class GetCharacterStatsTool extends EnhancedBaseTool {
             '보스 몬스터 데미지',
             '방어율 무시',
             '데미지',
+            // English stat names
+            'Attack Power',
+            'Magic Power',
+            'Critical Rate',
+            'Critical Damage',
+            'Boss Monster Damage',
+            'Defense Rate Ignore',
+            'Damage',
           ].includes(s.stat_name)
         ) || [];
 
       const defenseStats =
         stats.final_stat?.filter((s) =>
-          ['물리방어력', '마법방어력', '스탠스', '방어율'].includes(s.stat_name)
+          [
+            // Korean stat names
+            '물리방어력',
+            '마법방어력',
+            '스탠스',
+            '방어율',
+            // English stat names
+            'Physical Defense',
+            'Magic Defense',
+            'Stance',
+            'Defense Rate',
+          ].includes(s.stat_name)
         ) || [];
 
       context.logger.info('Character stats retrieved successfully', {
@@ -212,24 +302,54 @@ export class GetCharacterStatsTool extends EnhancedBaseTool {
       return this.formatResult(
         {
           characterName,
-          date: stats.date || date || 'latest',
+          date: stats.date
+            ? formatSEADate(stats.date)
+            : date
+              ? formatSEADate(date)
+              : getCurrentSEADate(),
           basicStats: basicStats.reduce(
             (acc, stat) => {
-              acc[stat.stat_name] = stat.stat_value;
+              const numValue = parseInt(stat.stat_value);
+              acc[stat.stat_name] = isNaN(numValue) ? stat.stat_value : formatSEANumber(numValue);
               return acc;
             },
             {} as Record<string, string>
           ),
           combatStats: combatStats.reduce(
             (acc, stat) => {
-              acc[stat.stat_name] = stat.stat_value;
+              const numValue = parseInt(stat.stat_value);
+              // Check if it's a percentage stat
+              if (
+                stat.stat_name.includes('확률') ||
+                stat.stat_name.includes('Rate') ||
+                stat.stat_name.includes('데미지') ||
+                stat.stat_name.includes('Damage') ||
+                stat.stat_name.includes('무시') ||
+                stat.stat_name.includes('Ignore')
+              ) {
+                const percentValue = parseFloat(stat.stat_value);
+                acc[stat.stat_name] = isNaN(percentValue)
+                  ? stat.stat_value
+                  : formatSEAPercentage(percentValue);
+              } else {
+                acc[stat.stat_name] = isNaN(numValue) ? stat.stat_value : formatSEANumber(numValue);
+              }
               return acc;
             },
             {} as Record<string, string>
           ),
           defenseStats: defenseStats.reduce(
             (acc, stat) => {
-              acc[stat.stat_name] = stat.stat_value;
+              const numValue = parseInt(stat.stat_value);
+              // Check if it's a percentage stat
+              if (stat.stat_name.includes('율') || stat.stat_name.includes('Rate')) {
+                const percentValue = parseFloat(stat.stat_value);
+                acc[stat.stat_name] = isNaN(percentValue)
+                  ? stat.stat_value
+                  : formatSEAPercentage(percentValue);
+              } else {
+                acc[stat.stat_name] = isNaN(numValue) ? stat.stat_value : formatSEANumber(numValue);
+              }
               return acc;
             },
             {} as Record<string, string>
@@ -237,12 +357,33 @@ export class GetCharacterStatsTool extends EnhancedBaseTool {
           allStats:
             stats.final_stat?.reduce(
               (acc, stat) => {
-                acc[stat.stat_name] = stat.stat_value;
+                const numValue = parseInt(stat.stat_value);
+                // Apply appropriate formatting based on stat type
+                if (
+                  stat.stat_name.includes('확률') ||
+                  stat.stat_name.includes('Rate') ||
+                  stat.stat_name.includes('데미지') ||
+                  stat.stat_name.includes('Damage') ||
+                  stat.stat_name.includes('무시') ||
+                  stat.stat_name.includes('Ignore') ||
+                  stat.stat_name.includes('율') ||
+                  stat.stat_name.includes('스탠스') ||
+                  stat.stat_name.includes('Stance')
+                ) {
+                  const percentValue = parseFloat(stat.stat_value);
+                  acc[stat.stat_name] = isNaN(percentValue)
+                    ? stat.stat_value
+                    : formatSEAPercentage(percentValue);
+                } else {
+                  acc[stat.stat_name] = isNaN(numValue)
+                    ? stat.stat_value
+                    : formatSEANumber(numValue);
+                }
                 return acc;
               },
               {} as Record<string, string>
             ) || {},
-          remainAp: stats.remain_ap,
+          remainAp: formatSEANumber(parseInt(stats.remain_ap.toString())),
         },
         {
           executionTime,
@@ -341,20 +482,26 @@ export class GetCharacterEquipmentTool extends EnhancedBaseTool {
               shapeIcon: item.item_shape_icon,
               shapeName: item.item_shape_name,
               gender: item.item_gender,
-              totalOption: item.item_total_option,
-              baseOption: item.item_base_option,
-              exceptionalOption: item.item_exceptional_option,
-              addOption: item.item_add_option,
-              starforceOption: item.item_starforce_option,
-              etcOption: item.item_etc_option,
-              starforce: item.starforce,
+              totalOption: formatEquipmentOption(item.item_total_option),
+              baseOption: formatEquipmentOption(item.item_base_option),
+              exceptionalOption: formatEquipmentOption(item.item_exceptional_option),
+              addOption: formatEquipmentOption(item.item_add_option),
+              starforceOption: formatEquipmentOption(item.item_starforce_option),
+              etcOption: formatEquipmentOption(item.item_etc_option),
+              starforce: formatSEANumber(parseInt(item.starforce.toString())),
               starforceScrollFlag: item.starforce_scroll_flag,
-              cuttableCount: item.cuttable_count,
+              cuttableCount: formatSEANumber(parseInt(item.cuttable_count.toString())),
               goldenHammerFlag: item.golden_hammer_flag,
-              scrollUpgrade: item.scroll_upgrade,
-              scrollUpgradableCount: item.scroll_upgradeable_count,
-              scrollResilienceCount: item.scroll_resilience_count,
-              scrollUpgradeCount: item.scroll_upgradeable_count,
+              scrollUpgrade: formatSEANumber(parseInt(item.scroll_upgrade.toString())),
+              scrollUpgradableCount: formatSEANumber(
+                parseInt(item.scroll_upgradeable_count.toString())
+              ),
+              scrollResilienceCount: formatSEANumber(
+                parseInt(item.scroll_resilience_count.toString())
+              ),
+              scrollUpgradeCount: formatSEANumber(
+                parseInt(item.scroll_upgradeable_count.toString())
+              ),
               potential: item.potential_option_grade,
               potentialOptions: [
                 item.potential_option_1,
@@ -382,7 +529,11 @@ export class GetCharacterEquipmentTool extends EnhancedBaseTool {
       return this.formatResult(
         {
           characterName,
-          date: equipment.date || date || 'latest',
+          date: equipment.date
+            ? formatSEADate(equipment.date)
+            : date
+              ? formatSEADate(date)
+              : getCurrentSEADate(),
           equipment: equipmentBySlot,
           equipmentList: equipment.item_equipment || [],
           presetNo: equipment.preset_no,
@@ -493,18 +644,39 @@ export class GetCharacterFullInfoTool extends EnhancedBaseTool {
 
       const executionTime = Date.now() - startTime;
 
+      // Get job class insights
+      const jobClass = basicInfo.character_class as JobClass;
+      const jobCategory = getJobCategory(jobClass);
+      const primaryStat = getJobPrimaryStat(jobClass);
+      const jobDescription = getJobDescription(jobClass);
+      const recommendedBuild = getRecommendedBuild(jobClass);
+
       const result = {
         characterName: basicInfo.character_name,
         basicInfo: {
-          level: basicInfo.character_level,
+          level: formatSEANumber(parseInt(basicInfo.character_level.toString())),
           job: basicInfo.character_class,
           jobDetail: basicInfo.character_class_level,
-          exp: basicInfo.character_exp,
-          expRate: basicInfo.character_exp_rate,
+          exp: formatSEANumber(
+            typeof basicInfo.character_exp === 'string'
+              ? parseInt(basicInfo.character_exp)
+              : basicInfo.character_exp
+          ),
+          expRate: formatSEAPercentage(parseFloat(basicInfo.character_exp_rate)),
           guildName: basicInfo.character_guild_name || null,
           world: basicInfo.world_name,
           gender: basicInfo.character_gender,
-          date: basicInfo.date || date || 'latest',
+          date: basicInfo.date
+            ? formatSEADate(basicInfo.date)
+            : date
+              ? formatSEADate(date)
+              : getCurrentSEADate(),
+          jobInsights: {
+            category: jobCategory,
+            primaryStat: primaryStat,
+            description: jobDescription,
+            recommendedBuild: recommendedBuild,
+          },
         },
         stats: {
           basicStats:
@@ -512,7 +684,10 @@ export class GetCharacterFullInfoTool extends EnhancedBaseTool {
               ?.filter((s) => ['STR', 'DEX', 'INT', 'LUK', 'HP', 'MP'].includes(s.stat_name))
               .reduce(
                 (acc, stat) => {
-                  acc[stat.stat_name] = stat.stat_value;
+                  const numValue = parseInt(stat.stat_value);
+                  acc[stat.stat_name] = isNaN(numValue)
+                    ? stat.stat_value
+                    : formatSEANumber(numValue);
                   return acc;
                 },
                 {} as Record<string, string>
@@ -521,6 +696,7 @@ export class GetCharacterFullInfoTool extends EnhancedBaseTool {
             stats.final_stat
               ?.filter((s) =>
                 [
+                  // Korean stat names
                   '공격력',
                   '마력',
                   '크리티컬 확률',
@@ -528,16 +704,42 @@ export class GetCharacterFullInfoTool extends EnhancedBaseTool {
                   '보스 몬스터 데미지',
                   '방어율 무시',
                   '데미지',
+                  // English stat names
+                  'Attack Power',
+                  'Magic Power',
+                  'Critical Rate',
+                  'Critical Damage',
+                  'Boss Monster Damage',
+                  'Defense Rate Ignore',
+                  'Damage',
                 ].includes(s.stat_name)
               )
               .reduce(
                 (acc, stat) => {
-                  acc[stat.stat_name] = stat.stat_value;
+                  const numValue = parseInt(stat.stat_value);
+                  // Check if it's a percentage stat
+                  if (
+                    stat.stat_name.includes('확률') ||
+                    stat.stat_name.includes('Rate') ||
+                    stat.stat_name.includes('데미지') ||
+                    stat.stat_name.includes('Damage') ||
+                    stat.stat_name.includes('무시') ||
+                    stat.stat_name.includes('Ignore')
+                  ) {
+                    const percentValue = parseFloat(stat.stat_value);
+                    acc[stat.stat_name] = isNaN(percentValue)
+                      ? stat.stat_value
+                      : formatSEAPercentage(percentValue);
+                  } else {
+                    acc[stat.stat_name] = isNaN(numValue)
+                      ? stat.stat_value
+                      : formatSEANumber(numValue);
+                  }
                   return acc;
                 },
                 {} as Record<string, string>
               ) || {},
-          remainAp: stats.remain_ap,
+          remainAp: formatSEANumber(parseInt(stats.remain_ap.toString())),
         },
         ...(includeEquipment &&
           equipment && {
@@ -550,7 +752,7 @@ export class GetCharacterFullInfoTool extends EnhancedBaseTool {
                     acc[item.item_equipment_slot] = {
                       name: item.item_name,
                       icon: item.item_icon,
-                      starforce: item.starforce,
+                      starforce: formatSEANumber(parseInt(item.starforce.toString())),
                       potential: item.potential_option_grade,
                       potentialOptions: [
                         item.potential_option_1,
@@ -564,13 +766,15 @@ export class GetCharacterFullInfoTool extends EnhancedBaseTool {
                 ) || {},
             },
           }),
-        date: date || 'latest',
+        date: date ? formatSEADate(date) : getCurrentSEADate(),
       };
 
       context.logger.info('Character full info retrieved successfully', {
         characterName,
         level: basicInfo.character_level,
         job: basicInfo.character_class,
+        jobCategory: jobCategory,
+        primaryStat: primaryStat,
         statsCount: stats.final_stat?.length || 0,
         equipmentCount: equipment?.item_equipment?.length || 0,
         executionTime,
@@ -677,6 +881,103 @@ export class GetCharacterAnalysisTool extends EnhancedBaseTool {
 }
 
 /**
+ * Tool for getting SEA job class information
+ */
+export class GetJobClassInfoTool extends EnhancedBaseTool {
+  public readonly name = 'get_job_class_info';
+  public readonly description =
+    'Get detailed information about a specific job class in MapleStory SEA including category, stats, and advancement paths';
+
+  public readonly inputSchema: JSONSchema7 = {
+    type: 'object',
+    properties: {
+      jobClass: {
+        type: 'string',
+        description: 'The job class name to get information about',
+        enum: [...JOB_CLASSES],
+      },
+    },
+    required: ['jobClass'],
+    additionalProperties: false,
+  };
+
+  public readonly metadata = {
+    category: ToolCategory.CHARACTER,
+    tags: ['job', 'class', 'info', 'stats', 'advancement'],
+    examples: [
+      {
+        description: 'Get info about Hero job class',
+        arguments: { jobClass: 'Hero' },
+      },
+      {
+        description: 'Get info about Arch Mage (Fire, Poison)',
+        arguments: { jobClass: 'Arch Mage (Fire, Poison)' },
+      },
+    ],
+  };
+
+  protected async executeImpl(
+    args: Record<string, any>,
+    context: ToolContext
+  ): Promise<ToolResult> {
+    const jobClass = this.getRequiredString(args, 'jobClass') as JobClass;
+
+    try {
+      const startTime = Date.now();
+
+      // Validate job class
+      if (!validateJobClass(jobClass)) {
+        return this.formatError(`Invalid job class: ${jobClass}`);
+      }
+
+      // Get job information
+      const category = getJobCategory(jobClass);
+      const primaryStat = getJobPrimaryStat(jobClass);
+      const description = getJobDescription(jobClass);
+      const formattedName = formatJobClassName(jobClass);
+      const isBeginner = isBeginnerJob(jobClass);
+      const recommendedBuild = getRecommendedBuild(jobClass);
+
+      const executionTime = Date.now() - startTime;
+
+      const result = {
+        jobClass: formattedName,
+        category: category,
+        primaryStat: primaryStat,
+        description: description,
+        isBeginner: isBeginner,
+        recommendedBuild: recommendedBuild,
+        availableInSEA: true, // All jobs in our enum are available in SEA
+      };
+
+      context.logger.info('Job class information retrieved', {
+        jobClass,
+        category,
+        primaryStat,
+        executionTime,
+      });
+
+      return this.formatResult(result, {
+        executionTime,
+        cacheHit: false,
+        apiCalls: 0, // No API calls needed
+      });
+    } catch (error) {
+      context.logger.error('Failed to get job class info', {
+        jobClass,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      return this.formatError(
+        `Failed to get information for job class "${jobClass}": ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+}
+
+/**
  * Tool for finding character ranking position
  */
 export class FindCharacterRankingTool extends EnhancedBaseTool {
@@ -702,6 +1003,7 @@ export class FindCharacterRankingTool extends EnhancedBaseTool {
       className: {
         type: 'string',
         description: 'Character class to filter by (optional)',
+        enum: [...JOB_CLASSES],
       },
       maxPages: {
         type: 'number',
@@ -757,7 +1059,14 @@ export class FindCharacterRankingTool extends EnhancedBaseTool {
         executionTime,
       });
 
-      return this.formatResult(result, {
+      // Format the position number for SEA display
+      const formattedResult = {
+        ...result,
+        position: result.position ? formatSEANumber(result.position) : undefined,
+        searchedPages: formatSEANumber(result.searchedPages),
+      };
+
+      return this.formatResult(formattedResult, {
         executionTime,
         cacheHit: false,
         apiCalls: result.searchedPages,

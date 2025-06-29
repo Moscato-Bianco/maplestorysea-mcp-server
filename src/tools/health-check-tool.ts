@@ -6,6 +6,19 @@
 import { JSONSchema7 } from 'json-schema';
 import { EnhancedBaseTool, ToolContext, ToolCategory, ToolMetadata, ToolResult } from './base-tool';
 import { createDefaultHealthManager } from '../utils/health-check';
+import {
+  formatSEADate,
+  formatSEATime,
+  getCurrentSEADate,
+  getCurrentSEATime,
+  getNextDailyReset,
+  getNextWeeklyReset,
+  getTimeUntilDailyReset,
+  isMaintenanceTime,
+  isDuringDataUpdate,
+  getNextDataUpdate,
+  SEA_SCHEDULES,
+} from '../utils/server-utils';
 
 export class HealthCheckTool extends EnhancedBaseTool {
   public readonly name = 'health_check';
@@ -102,12 +115,49 @@ export class HealthCheckTool extends EnhancedBaseTool {
       const healthStatus = await healthManager.runHealthChecks({ timeout });
       const executionTime = Date.now() - startTime;
 
-      let result = healthStatus;
+      // Add SEA-specific schedule information
+      const timeUntilReset = getTimeUntilDailyReset();
+      const nextDataUpdate = getNextDataUpdate();
+
+      const seaScheduleInfo = {
+        currentTime: {
+          date: getCurrentSEADate(),
+          time: getCurrentSEATime(),
+          timezone: 'SGT (UTC+8)',
+        },
+        gameSchedules: {
+          dailyReset: {
+            next: formatSEADate(getNextDailyReset(), true),
+            timeRemaining: `${timeUntilReset.hours}h ${timeUntilReset.minutes}m ${timeUntilReset.seconds}s`,
+          },
+          weeklyReset: {
+            next: formatSEADate(getNextWeeklyReset(), true),
+            day: 'Wednesday 00:00 SGT',
+          },
+          dataUpdate: {
+            next: formatSEADate(nextDataUpdate, true),
+            schedule: 'Daily at 08:00 SGT',
+            inProgress: isDuringDataUpdate(),
+          },
+        },
+        maintenanceInfo: {
+          likelyMaintenance: isMaintenanceTime(),
+          weeklyWindow: 'Wednesday 08:00-12:00 SGT',
+          emergencyWindow: 'Daily 01:00-06:00 SGT',
+          patchWindow: 'Tuesday 23:00 - Wednesday 03:00 SGT',
+        },
+      };
+
+      let result = {
+        ...healthStatus,
+        seaSchedules: seaScheduleInfo,
+      };
 
       // Filter for specific component if requested
       if (component && healthStatus.details[component]) {
         result = {
           ...healthStatus,
+          seaSchedules: seaScheduleInfo,
           details: {
             [component]: healthStatus.details[component],
           },

@@ -9,9 +9,11 @@ Comprehensive troubleshooting guide for MapleStory SEA MCP Server.
 3. [API-Related Problems](#api-related-problems)
 4. [Claude Desktop Integration](#claude-desktop-integration)
 5. [Performance Issues](#performance-issues)
-6. [Error Reference](#error-reference)
-7. [Debug Mode](#debug-mode)
-8. [Getting Help](#getting-help)
+6. [SEA-Specific Issues](#sea-specific-issues)
+7. [Job Class Problems](#job-class-problems)
+8. [Error Reference](#error-reference)
+9. [Debug Mode](#debug-mode)
+10. [Getting Help](#getting-help)
 
 ## Quick Diagnostics
 
@@ -348,6 +350,190 @@ export LOG_LEVEL=debug
    # For long-running instances, periodic restart helps
    pkill -f maplestory-mcp-server
    ```
+
+## SEA-Specific Issues
+
+### 1. Invalid World Names
+
+**Symptoms:**
+- "Invalid world name" errors
+- World filtering not working
+- Empty ranking results
+
+**Solutions:**
+```typescript
+// ✅ Correct SEA world names
+const validWorlds = ["Aquila", "Bootes", "Cassiopeia", "Delphinus"];
+
+// ❌ Common mistakes
+const invalidWorlds = ["Scania", "Windia", "Bera", "Reboot"]; // These are GMS worlds
+```
+
+**Test Command:**
+```
+Get overall rankings for Aquila world
+```
+
+### 2. Character Name Format Issues
+
+**Symptoms:**
+- "Character not found" for existing characters
+- "Invalid character name format" errors
+- Search failures
+
+**Solutions:**
+```typescript
+// ✅ Valid SEA character names
+"AquilaHero123"
+"WarriorPlayer"
+"TestUser99"
+
+// ❌ Invalid names
+"Hero Player"     // Contains space
+"영웅플레이어"      // Korean characters
+"Hero!"          // Special characters
+"H"             // Too short (min 2)
+"VeryLongCharacterNameThatExceedsLimit" // Too long (max 13)
+```
+
+### 3. Time Zone Confusion
+
+**Symptoms:**
+- Date queries returning unexpected results
+- "Date in future" errors when using current date
+- Ranking data seems outdated
+
+**Solutions:**
+```typescript
+// SEA API uses Singapore Time (SGT/UTC+8)
+// If it's 2024-01-15 10:00 UTC, use 2024-01-15 for SEA
+// Data updates happen around 8:00 AM SGT
+
+// ✅ Correct date usage
+"Get character stats for date 2024-01-15"
+
+// ❌ Common mistakes
+"Get character stats for date 2024-01-16" // If 16th hasn't passed 8AM SGT
+```
+
+### 4. API Feature Limitations
+
+**Symptoms:**
+- "Feature not supported" errors
+- Missing data fields
+- Unavailable endpoints
+
+**Solutions:**
+```typescript
+// ❌ Not available in SEA API
+- Cube probability rates
+- Korean-style notices
+- Real-time server status
+- Some cash shop data
+
+// ✅ Available alternatives
+- Character equipment analysis
+- Job class information
+- Union and guild data
+- Comprehensive rankings
+```
+
+## Job Class Problems
+
+### 1. Invalid Job Class Names
+
+**Symptoms:**
+- "Invalid job class" errors when querying job info
+- Job filtering not working in rankings
+- Unexpected job class responses
+
+**Solutions:**
+```typescript
+// ✅ Correct job class names (case-sensitive)
+"Hero"
+"Arch Mage (Fire, Poison)"
+"Night Lord"
+"Dawn Warrior"
+
+// ❌ Common mistakes
+"hero"                          // Wrong case
+"Arch Mage (Fire/Poison)"      // Wrong punctuation
+"Arch Mage Fire Poison"        // Missing parentheses
+"Fire Poison Arch Mage"        // Wrong order
+```
+
+**Test Commands:**
+```
+Get detailed information about Hero job class
+Get job class info for Arch Mage (Fire, Poison)
+```
+
+### 2. Job Category Confusion
+
+**Symptoms:**
+- Unexpected job categorization
+- Wrong primary stat recommendations
+- Confusion about job advancement paths
+
+**Solutions:**
+```typescript
+// Check job category and details
+"Get detailed information about [JobName] job class"
+
+// Job categories in SEA:
+- Explorer (15 jobs)
+- Cygnus Knights (6 jobs)  
+- Heroes (6 jobs)
+- Resistance (7 jobs)
+- Nova (4 jobs)
+- Sengoku (2 jobs)
+- Flora (4 jobs)
+- Anima (2 jobs)
+- Jianghu (2 jobs)
+```
+
+### 3. Primary Stat Misunderstanding
+
+**Symptoms:**
+- Confusion about which stats to focus on
+- Unexpected stat recommendations
+- Build advice doesn't match expectations
+
+**Solutions:**
+```typescript
+// Primary stats by job type:
+STR: Warriors, most Pirates (Buccaneer line)
+DEX: Archers, some Pirates (Corsair line)
+INT: Magicians
+LUK: Thieves
+STR+DEX: Xenon (hybrid)
+HP: Demon Avenger (special case)
+
+// Use job class info tool for verification:
+"What are the primary stats for [JobName]?"
+```
+
+### 4. Job Advancement Requirements
+
+**Symptoms:**
+- Confusion about when characters can advance
+- Wrong level expectations
+- Advancement path questions
+
+**Solutions:**
+```typescript
+// Standard advancement levels:
+1st Job: Level 10
+2nd Job: Level 30  
+3rd Job: Level 60
+4th Job: Level 100
+5th Job: Level 200
+6th Job: Level 260
+
+// Special jobs may have different requirements
+// Use the advancement checker:
+"Can a level 85 character advance to [TargetJob]?"
+```
 
 ## Error Reference
 

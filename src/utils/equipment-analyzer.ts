@@ -39,7 +39,7 @@ export function parseStarforceLevel(item: any): number {
     if (koreanStarMatch) {
       return parseInt(koreanStarMatch[1], 10);
     }
-    
+
     // English patterns: (숫자stars) or (숫자★) or [숫자*]
     const englishStarMatch = item.item_name.match(/\((\d+)(?:stars?|★|\*)\)/i);
     if (englishStarMatch) {
@@ -170,13 +170,21 @@ function extractSetName(itemName: string): string | null {
 function getSetTotalCount(setName: string): number {
   // Common set sizes (simplified)
   const knownSets: Record<string, number> = {
+    // Korean names
     펜살리르: 7,
     루타비스: 8,
-    CRA: 4,
     아케인: 6,
     압솔: 6,
     에테르넬: 6,
     제네시스: 6,
+    // English names
+    Pensalir: 7,
+    Lutabis: 8,
+    CRA: 4,
+    Arcane: 6,
+    Absolab: 6,
+    Eternal: 6,
+    Genesis: 6,
   };
 
   return knownSets[setName] || 8; // Default to 8 pieces
@@ -199,7 +207,7 @@ function getSetEffectDetails(
   for (let i = 2; i <= activeCount; i++) {
     effects.push({
       requiredCount: i,
-      description: `${setName} ${i}세트 효과`,
+      description: `${setName} ${i}-Set Effect`,
       stats: {
         str: i * 10,
         dex: i * 10,

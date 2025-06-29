@@ -383,13 +383,14 @@ test/              # Test files (to be added)
    ```typescript
    // ✅ Good
    export enum WorldName {
-     SCANIA = '스카니아',
-     BERA = '베라',
-     LUNA = '루나'
+     AQUILA = 'Aquila',
+     BOOTES = 'Bootes',
+     CASSIOPEIA = 'Cassiopeia',
+     DELPHINUS = 'Delphinus'
    }
    
    // ❌ Avoid
-   const WORLD_SCANIA = '스카니아';
+   const WORLD_AQUILA = 'Aquila';
    ```
 
 ### Code Formatting

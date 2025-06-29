@@ -82,6 +82,7 @@ Close and restart Claude Desktop to load the new MCP server.
 - `get_character_full_info` - Get comprehensive character data
 - `get_character_analysis` - Get character analysis with recommendations
 - `find_character_ranking` - Find character's ranking position
+- `get_job_class_info` - Get detailed job class information and stats
 
 ### Union Tools
 - `get_union_info` - Get union information
@@ -108,6 +109,12 @@ This server is specifically designed for MapleStory SEA and supports:
 - Bootes
 - Cassiopeia
 - Delphinus
+
+**Job Classes:**
+- Complete support for all 241 SEA job classes
+- Organized into 9 categories: Explorer, Cygnus Knights, Heroes, Resistance, Nova, Sengoku, Flora, Anima, Jianghu
+- Job advancement tracking and primary stat recommendations
+- SEA-specific job features and descriptions
 
 **Character Names:**
 - English letters and numbers only (no Korean characters)
@@ -155,6 +162,11 @@ Search for guilds with name containing "Elite" in Aquila world
 Get overall rankings for Aquila world, Arch Mage class
 ```
 
+### Get Job Class Information
+```
+Get detailed information about Hero job class including primary stats and build recommendations
+```
+
 ## 🛠️ Development
 
 ### Prerequisites
@@ -181,9 +193,15 @@ npm run test:integration
 npm run dev
 ```
 
-## 📝 API Reference
+## 📝 Documentation
 
-For detailed API documentation, see [API_REFERENCE.md](docs/API_REFERENCE.md).
+### Comprehensive Guides
+- **[API Reference](docs/API_REFERENCE.md)** - Complete tool documentation with examples
+- **[Claude Desktop Integration](docs/CLAUDE_DESKTOP_GUIDE.md)** - Step-by-step setup guide  
+- **[SEA Features Guide](docs/SEA_FEATURES.md)** - SEA-specific features and differences
+- **[Best Practices](docs/BEST_PRACTICES.md)** - Rate limiting and optimization guide
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Examples](docs/EXAMPLES.md)** - Usage examples and patterns
 
 ## 🤝 Contributing
 
