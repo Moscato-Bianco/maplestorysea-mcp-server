@@ -3,7 +3,7 @@
  * Optimized for MapleStory SEA region with proper timezone and date formatting
  */
 
-import { DATE_FORMATS } from '../api/constants';
+// import { DATE_FORMATS } from '../api/constants';
 
 /**
  * Server status types
@@ -162,7 +162,7 @@ export function getTomorrowSEA(): string {
  * Extract maintenance time from content (SEA API does not support notices)
  * This function is kept for backward compatibility but always returns null
  */
-export function extractMaintenanceTime(content: string): {
+export function extractMaintenanceTime(_content: string): {
   startTime?: Date;
   endTime?: Date;
   duration?: string;
@@ -365,7 +365,7 @@ export function formatSEAPercentage(value: number, decimals: number = 1): string
   return `${value.toFixed(decimals)}%`;
 }
 
-export function formatNoticeContent(content: string, maxLength: number = 200): string {
+export function formatNoticeContent(content: string, maxLength = 200): string {
   if (!content) return '';
 
   // Remove HTML tags

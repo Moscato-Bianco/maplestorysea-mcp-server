@@ -247,7 +247,7 @@ export function getJobPrimaryStat(jobClass: string): string | string[] {
 export function canAdvanceToJob(
   currentLevel: number,
   targetJob: string,
-  currentJob?: string
+  _currentJob?: string
 ): boolean {
   // Special advancement requirements
   const jobLevelRequirements: Record<string, number> = {

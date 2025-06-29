@@ -6,7 +6,6 @@ import { WORLDS } from '../api/constants';
 import {
   SeaCharacterNameError,
   SeaWorldNotFoundError,
-  ValidationError as McpValidationError,
 } from './errors';
 
 export class ValidationError extends Error {

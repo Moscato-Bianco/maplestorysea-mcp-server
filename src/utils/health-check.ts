@@ -60,7 +60,7 @@ export class ApiHealthChecker extends HealthChecker {
         1
       );
 
-      const result = await Promise.race([healthPromise, timeoutPromise]);
+      await Promise.race([healthPromise, timeoutPromise]);
 
       // Clear the timeout if the API call succeeded
       if (timeoutId) {
