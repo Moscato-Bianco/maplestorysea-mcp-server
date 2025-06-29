@@ -22,7 +22,7 @@ export class GetOverallRankingTool extends EnhancedBaseTool {
       worldName: {
         type: 'string',
         description: 'World name to get rankings for (optional)',
-        enum: ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'],
+        enum: ['Aquila', 'Bootes', 'Cassiopeia', 'Draco'],
       },
       className: {
         type: 'string',

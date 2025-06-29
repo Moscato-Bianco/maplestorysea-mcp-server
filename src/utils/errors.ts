@@ -188,10 +188,10 @@ export class SeaApiUnsupportedFeatureError extends McpMapleError {
 export class SeaWorldNotFoundError extends McpMapleError {
   constructor(worldName: string) {
     super(
-      `World '${worldName}' is not available in MapleStory SEA. Available worlds: Aquila, Bootes, Cassiopeia, Delphinus`,
+      `World '${worldName}' is not available in MapleStory SEA. Available worlds: Aquila, Bootes, Cassiopeia, Draco`,
       'SEA_WORLD_NOT_FOUND',
       400,
-      { worldName, availableWorlds: ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'] }
+      { worldName, availableWorlds: ['Aquila', 'Bootes', 'Cassiopeia', 'Draco'] }
     );
     this.name = 'SeaWorldNotFoundError';
     Object.setPrototypeOf(this, SeaWorldNotFoundError.prototype);
@@ -488,7 +488,7 @@ export function createNexonApiError(
         // Check for invalid world names
         if (
           params.world_name &&
-          !['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'].includes(params.world_name)
+          !['Aquila', 'Bootes', 'Cassiopeia', 'Draco'].includes(params.world_name)
         ) {
           return new SeaWorldNotFoundError(params.world_name);
         }
@@ -858,7 +858,7 @@ function sanitizeParams(params: Record<string, any>): Record<string, any> {
 function getSeaApiContextForError(error: Error): Record<string, any> {
   const context: Record<string, any> = {
     apiRegion: 'SEA',
-    supportedWorlds: ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'],
+    supportedWorlds: ['Aquila', 'Bootes', 'Cassiopeia', 'Draco'],
   };
 
   if (error instanceof SeaWorldNotFoundError) {
@@ -919,7 +919,7 @@ function getSeaApiContextForError(error: Error): Record<string, any> {
  */
 export function formatErrorForUser(error: Error): string {
   if (error instanceof SeaWorldNotFoundError) {
-    return `Invalid world name. Please use one of these SEA worlds: Aquila, Bootes, Cassiopeia, or Delphinus.`;
+    return `Invalid world name. Please use one of these SEA worlds: Aquila, Bootes, Cassiopeia, or Draco.`;
   }
 
   if (error instanceof SeaCharacterNameError) {
@@ -1101,7 +1101,7 @@ export const seaWorldValidationStrategy: ErrorRecoveryStrategy = {
   recover: async (error: Error, context?: { suggestClosest?: boolean; logger?: any }) => {
     if (context?.suggestClosest && error instanceof SeaWorldNotFoundError && context?.logger) {
       // Log suggestion through proper logger
-      const availableWorlds = ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'];
+      const availableWorlds = ['Aquila', 'Bootes', 'Cassiopeia', 'Draco'];
       context.logger.warn('Invalid world name for SEA API', {
         invalidWorld: error.context?.worldName,
         availableWorlds,

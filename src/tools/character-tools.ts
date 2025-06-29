@@ -998,7 +998,7 @@ export class FindCharacterRankingTool extends EnhancedBaseTool {
       worldName: {
         type: 'string',
         description: 'World/server name to search in (optional)',
-        enum: ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'],
+        enum: ['Aquila', 'Bootes', 'Cassiopeia', 'Draco'],
       },
       className: {
         type: 'string',

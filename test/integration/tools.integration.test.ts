@@ -335,7 +335,7 @@ describe('MCP Tools Integration Tests', () => {
 
   describe('SEA API Compliance', () => {
     test('all tools should only support SEA worlds', () => {
-      const validWorlds = ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'];
+      const validWorlds = ['Aquila', 'Bootes', 'Cassiopeia', 'Draco'];
       
       tools.forEach(tool => {
         if (tool.inputSchema.properties?.worldName) {

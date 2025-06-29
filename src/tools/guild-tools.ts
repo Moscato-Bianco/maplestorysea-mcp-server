@@ -27,7 +27,7 @@ export class GetGuildInfoTool extends EnhancedBaseTool {
       worldName: {
         type: 'string',
         description: 'The world/server name where the guild exists',
-        enum: ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'],
+        enum: ['Aquila', 'Bootes', 'Cassiopeia', 'Draco'],
       },
       date: {
         type: 'string',
@@ -162,7 +162,7 @@ export class SearchGuildsTool extends EnhancedBaseTool {
       worldName: {
         type: 'string',
         description: 'World/server to search in (optional)',
-        enum: ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'],
+        enum: ['Aquila', 'Bootes', 'Cassiopeia', 'Draco'],
       },
       maxResults: {
         type: 'number',
@@ -271,7 +271,7 @@ export class GetGuildRankingTool extends EnhancedBaseTool {
         type: 'string',
         description:
           'World name to get guild rankings for (optional, gets all worlds if not specified)',
-        enum: ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'],
+        enum: ['Aquila', 'Bootes', 'Cassiopeia', 'Draco'],
       },
       guildName: {
         type: 'string',

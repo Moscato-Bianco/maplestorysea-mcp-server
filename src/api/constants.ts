@@ -122,7 +122,7 @@ export const ERROR_MESSAGES = {
   // SEA-Specific Errors
   SEA_FEATURE_UNSUPPORTED: 'This feature is not supported by MapleStory SEA API',
   SEA_WORLD_INVALID:
-    'Invalid world name. MapleStory SEA supports: Aquila, Bootes, Cassiopeia, Delphinus',
+    'Invalid world name. MapleStory SEA supports: Aquila, Bootes, Cassiopeia, Draco',
   SEA_CHARACTER_NAME_INVALID:
     'Invalid character name format for MapleStory SEA. Only English letters and numbers are allowed',
   SEA_GUILD_NAME_INVALID:
@@ -148,8 +148,9 @@ export const ERROR_MESSAGES = {
   UNKNOWN_ERROR: 'An unknown error occurred with MapleStory SEA API. Please try again',
 } as const;
 
-// MapleStory SEA worlds
-export const WORLDS = ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus', 'Draco'] as const;
+// MapleStory SEA worlds (active as of 2025)
+// Delphinus was merged into Draco in 2019 along with 6 other worlds
+export const WORLDS = ['Aquila', 'Bootes', 'Cassiopeia', 'Draco'] as const;
 
 // MapleStory SEA job classes - comprehensive mapping
 export const JOB_CLASSES = [

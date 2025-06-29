@@ -85,7 +85,7 @@ describe('SEA Localization Completeness', () => {
 
   describe('SEA World Names', () => {
     test('should support all SEA worlds', () => {
-      const expectedSEAWorlds = ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'];
+      const expectedSEAWorlds = ['Aquila', 'Bootes', 'Cassiopeia', 'Draco'];
       
       expectedSEAWorlds.forEach(world => {
         expect(WORLDS).toContain(world);
@@ -234,7 +234,7 @@ describe('SEA Localization Completeness', () => {
       // SEA servers have specific requirements
       const maxCharacterNameLength = 13;
       const minCharacterNameLength = 2;
-      const supportedWorlds = 4; // Aquila, Bootes, Cassiopeia, Delphinus
+      const supportedWorlds = 4; // Aquila, Bootes, Cassiopeia, Draco
       
       expect(WORLDS).toHaveLength(supportedWorlds);
       

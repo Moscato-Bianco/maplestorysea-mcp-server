@@ -35,7 +35,7 @@ class PerformanceBenchmark {
   private cache: MemoryCache;
   private testCharacters = ['TestChar1', 'TestChar2', 'TestChar3'];
   private testGuilds = ['TestGuild1', 'TestGuild2'];
-  private testWorlds = ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'];
+  private testWorlds = ['Aquila', 'Bootes', 'Cassiopeia', 'Draco'];
 
   constructor() {
     this.apiClient = new NexonApiClient(process.env.NEXON_API_KEY || 'test-key');

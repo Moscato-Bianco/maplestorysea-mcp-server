@@ -258,7 +258,7 @@ export class GetUnionRankingTool extends EnhancedBaseTool {
       worldName: {
         type: 'string',
         description: 'World name to get rankings for (optional, gets all worlds if not specified)',
-        enum: ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'],
+        enum: ['Aquila', 'Bootes', 'Cassiopeia', 'Draco'],
       },
       characterName: {
         type: 'string',

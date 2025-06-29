@@ -11,7 +11,7 @@ Comprehensive MCP (Model Context Protocol) server for accessing NEXON MapleStory
 - **TypeScript Support**: Full type safety and IntelliSense support
 - **Comprehensive Logging**: Detailed operation logging for debugging
 - **Error Handling**: Robust error handling with descriptive error messages
-- **SEA Specific**: Optimized for MapleStory SEA servers (Aquila, Bootes, Cassiopeia, Delphinus, Draco)
+- **SEA Specific**: Optimized for MapleStory SEA servers (Aquila, Bootes, Cassiopeia, Draco)
 
 ## 🚀 Quick Start
 
@@ -102,13 +102,18 @@ Close and restart Claude Desktop to load the new MCP server.
 
 ## 🌏 SEA Server Support
 
-This server is specifically designed for MapleStory SEA and supports:
+This server is specifically designed for MapleStory SEA and supports all active worlds:
 
-**Worlds:**
-- Aquila
-- Bootes
-- Cassiopeia
-- Delphinus
+**Active Worlds:**
+- **Aquila** - Original SEA server
+- **Bootes** - Original SEA server  
+- **Cassiopeia** - Original SEA server
+- **Draco** - Merged server (created 2019 from Delphinus + 6 other worlds)
+
+**Server History:**
+- 2019: Major server merger consolidated 7 worlds (Delphinus, Eridanus, Izar, Fornax, Gemini, Hercules, Jynarvis) into **Draco**
+- Aquila, Bootes, and Cassiopeia remained as separate worlds
+- All worlds accessible through Singapore and Malaysia gateways
 
 **Job Classes:**
 - Complete support for all 241 SEA job classes

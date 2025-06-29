@@ -251,7 +251,7 @@ describe('Validation Utilities', () => {
       expect(() => validateWorldName('Aquila')).not.toThrow();
       expect(() => validateWorldName('Bootes')).not.toThrow();
       expect(() => validateWorldName('Cassiopeia')).not.toThrow();
-      expect(() => validateWorldName('Delphinus')).not.toThrow();
+      expect(() => validateWorldName('Draco')).not.toThrow();
     });
 
     test('should reject invalid world names', () => {
