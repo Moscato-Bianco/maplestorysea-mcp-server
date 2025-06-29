@@ -150,7 +150,8 @@ export function sanitizeCharacterName(characterName: string): string {
     return '';
   }
 
-  return characterName.trim().toLowerCase().replace(/\s+/g, '');
+  // Don't change case for MapleStory character names as they are case-sensitive
+  return characterName.trim().replace(/\s+/g, '');
 }
 
 /**

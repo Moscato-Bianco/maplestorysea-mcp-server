@@ -149,7 +149,7 @@ export const ERROR_MESSAGES = {
 } as const;
 
 // MapleStory SEA worlds
-export const WORLDS = ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus'] as const;
+export const WORLDS = ['Aquila', 'Bootes', 'Cassiopeia', 'Delphinus', 'Draco'] as const;
 
 // MapleStory SEA job classes - comprehensive mapping
 export const JOB_CLASSES = [

@@ -11,7 +11,7 @@ Comprehensive MCP (Model Context Protocol) server for accessing NEXON MapleStory
 - **TypeScript Support**: Full type safety and IntelliSense support
 - **Comprehensive Logging**: Detailed operation logging for debugging
 - **Error Handling**: Robust error handling with descriptive error messages
-- **SEA Specific**: Optimized for MapleStory SEA servers (Aquila, Bootes, Cassiopeia, Delphinus)
+- **SEA Specific**: Optimized for MapleStory SEA servers (Aquila, Bootes, Cassiopeia, Delphinus, Draco)
 
 ## 🚀 Quick Start
 
